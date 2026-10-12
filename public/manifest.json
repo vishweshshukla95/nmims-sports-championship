@@ -1,0 +1,21 @@
+{
+  "name": "SVKM'S NMIMS Inter Campus Sports Championship 2026-27",
+  "short_name": "NMIMS Sports 26-27",
+  "description": "Official portal of SVKM'S NMIMS Inter Campus Sports Championship 2026-27 at MPTP Shirpur Campus.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F122E",
+  "theme_color": "#1B1F4B",
+  "icons": [
+    {
+      "src": "/images/nmims-logo-white.webp",
+      "sizes": "192x192",
+      "type": "image/webp"
+    },
+    {
+      "src": "/images/nmims-logo-white.webp",
+      "sizes": "512x512",
+      "type": "image/webp"
+    }
+  ]
+}

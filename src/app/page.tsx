@@ -365,7 +365,7 @@ export default function HomePage() {
               About The Championship
             </h2>
             <p className="text-base text-[#F4EFE3]/90 leading-relaxed font-normal">
-              Organised by the <strong>Sports Department, SVKM&apos;s NMIMS</strong>, the Inter Campus Sports Championship is the pinnacle athletic summit bringing together over 800 student-athletes from Mumbai, Navi Mumbai, Shirpur, Indore, Bengaluru, Hyderabad, and Chandigarh.
+              Organised by the <strong>Sports Department, SVKM&apos;s NMIMS</strong>, the Inter Campus Sports Championship is the pinnacle athletic championship gathering bringing together over 800 student-athletes from Mumbai, Navi Mumbai, Shirpur, Indore, Bengaluru, Hyderabad, and Chandigarh.
             </p>
             <p className="text-base text-[#AEB3D6] leading-relaxed">
               Hosted at the world-class sports complex of <strong>Mukesh Patel Technology Park (MPTP), Shirpur Campus</strong>, the five-day tournament features standard international facilities, floodlit arenas, professional federation officiating, and spirited collegiate camaraderie.
