@@ -1,0 +1,192 @@
+@import "tailwindcss";
+@config "../../tailwind.config.ts";
+
+:root {
+  --navy: #1B1F4B;
+  --indigo-black: #0F122E;
+  --royal: #1E3FA8;
+  --cobalt: #2447C4;
+  --surface: #161A40;
+  --surface-2: #20255A;
+  --surface-3: #283070;
+  --border: rgba(217, 178, 111, 0.18);
+  --border-strong: rgba(217, 178, 111, 0.45);
+  --gold: #D9B26F;
+  --gold-light: #F0D38F;
+  --gold-dark: #A88345;
+  --gold-gradient: linear-gradient(180deg, #F0D38F 0%, #D9B26F 50%, #A88345 100%);
+  --text: #F4EFE3;
+  --text-muted: #AEB3D6;
+  --silver: #C9CED6;
+  --bronze: #C08A55;
+  --success: #34D399;
+  --warning: #FBBF24;
+  --men: #7AA2FF;
+  --women: #F49AC1;
+}
+
+@theme {
+  --color-navy: #1B1F4B;
+  --color-indigo-black: #0F122E;
+  --color-royal: #1E3FA8;
+  --color-cobalt: #2447C4;
+  --color-surface: #161A40;
+  --color-surface-2: #20255A;
+  --color-surface-3: #283070;
+  --color-gold: #D9B26F;
+  --color-gold-light: #F0D38F;
+  --color-gold-dark: #A88345;
+  --color-text-main: #F4EFE3;
+  --color-text-muted: #AEB3D6;
+  --color-silver: #C9CED6;
+  --color-bronze: #C08A55;
+  --color-success: #34D399;
+  --color-warning: #FBBF24;
+  --color-men: #7AA2FF;
+  --color-women: #F49AC1;
+  --font-display: var(--font-cinzel), Cinzel, serif;
+  --font-heading: var(--font-oswald), Oswald, sans-serif;
+  --font-body: var(--font-inter), Inter, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--navy);
+  color: var(--text);
+  font-family: var(--font-body), sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-size: 16px;
+}
+
+/* Headings in gold gradient */
+.text-gold-gradient {
+  background: var(--gold-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Gold section title decoration */
+.title-ornament {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.title-ornament::before,
+.title-ornament::after {
+  content: "";
+  display: inline-block;
+  height: 1px;
+  width: 48px;
+  background: linear-gradient(90deg, transparent, #D9B26F, transparent);
+}
+
+/* Card hover glow */
+.card-championship {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-championship:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 0 24px rgba(217, 178, 111, 0.25);
+  transform: translateY(-2px);
+}
+
+/* Primary gold button */
+.btn-gold {
+  background: var(--gold-gradient);
+  color: #0F122E;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 9999px;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-gold:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 0 20px rgba(240, 211, 143, 0.45);
+}
+
+/* Secondary royal button */
+.btn-royal {
+  background-color: var(--royal);
+  color: var(--gold-light);
+  border: 1px solid var(--border-strong);
+  font-weight: 600;
+  border-radius: 9999px;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-royal:hover {
+  background-color: var(--cobalt);
+  color: #FFFFFF;
+  border-color: var(--gold);
+}
+
+/* Outline button */
+.btn-outline-gold {
+  border: 1px solid var(--border-strong);
+  color: var(--gold);
+  background: transparent;
+  font-weight: 600;
+  border-radius: 9999px;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-outline-gold:hover {
+  background: rgba(217, 178, 111, 0.12);
+  border-color: var(--gold);
+  color: var(--gold-light);
+}
+
+/* Active and inactive tabs */
+.tab-active {
+  background-color: var(--gold);
+  color: #0F122E;
+  font-weight: 700;
+}
+
+.tab-inactive {
+  background-color: var(--surface-3);
+  color: var(--text-muted);
+}
+
+.tab-inactive:hover {
+  color: var(--text);
+  background-color: rgba(40, 48, 112, 0.9);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0F122E;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #283070;
+  border-radius: 4px;
+  border: 1px solid rgba(217, 178, 111, 0.2);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #D9B26F;
+}
+
+/* Focus styles for accessibility */
+*:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
