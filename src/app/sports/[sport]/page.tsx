@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -27,7 +27,7 @@ import {
 import { getMatches } from "@/lib/tournament-store";
 import { Match, CategoryGender, SportType } from "@/types/tournament";
 
-export default function SportDashboardPage() {
+function SportDashboardContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const sportSlug = params.sport as string;
@@ -432,3 +432,18 @@ export default function SportDashboardPage() {
     </NavyPatchBackground>
   );
 }
+
+export default function SportDashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-navy flex items-center justify-center text-gold font-serif text-lg">
+          Loading Dashboard...
+        </div>
+      }
+    >
+      <SportDashboardContent />
+    </Suspense>
+  );
+}
+
