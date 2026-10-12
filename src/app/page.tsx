@@ -77,12 +77,12 @@ export default function HomePage() {
   return (
     <div className="relative bg-navy text-text-main overflow-hidden">
       {/* 1. HERO SECTION (Front Cover) */}
-      <section className="relative min-h-[95vh] flex flex-col justify-between overflow-hidden">
+      <section className="relative isolate min-h-[95vh] flex flex-col justify-between overflow-hidden">
         {/* Background Image with Ken Burns Zoom & Navy Overlay */}
         <div className="absolute inset-0 -z-30 overflow-hidden">
           <Image
-            src="/images/hero-cover.webp"
-            alt="SVKM'S NMIMS Inter Campus Sports Championship Champions"
+            src="/images/gallery/highlight-02-all-campuses-group.webp"
+            alt="Participants from all seven NMIMS campuses at MPTP Shirpur"
             fill
             priority
             sizes="100vw"
@@ -90,16 +90,16 @@ export default function HomePage() {
           />
           {/* Layered overlays: navy tint + angled royal patch texture */}
           <div
-            className="absolute inset-0 -z-20 pointer-events-none"
+            className="absolute inset-0 pointer-events-none"
             style={{
               background:
-                "linear-gradient(180deg, rgba(15,18,46,0.55) 0%, rgba(27,31,75,0.85) 60%, #1B1F4B 100%)",
+                "linear-gradient(180deg, rgba(15,18,46,0.30) 0%, rgba(27,31,75,0.55) 55%, #1B1F4B 100%)",
             }}
           />
         </div>
 
         {/* Navy Patch background angled shapes on top of image */}
-        <div className="absolute inset-0 -z-10 pointer-events-none opacity-40">
+        <div className="absolute inset-0 -z-10 pointer-events-none opacity-20">
           <NavyPatchBackground variant="hero" className="w-full h-full" />
         </div>
 
@@ -112,7 +112,7 @@ export default function HomePage() {
           </div>
 
           {/* Official Championship Title (2-3 lines in Cinzel serif) */}
-          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-serif font-black tracking-tight leading-tight uppercase max-w-5xl text-gold-gradient drop-shadow-md">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-serif font-black tracking-tight leading-tight uppercase max-w-5xl text-gold-gradient drop-shadow-[0_4px_24px_rgba(0,0,0,0.6)]">
             SVKM&apos;S NMIMS
             <br />
             INTER CAMPUS SPORTS CHAMPIONSHIP

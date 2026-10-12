@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     siteName: TOURNAMENT_CONFIG.fullName,
     images: [
       {
-        url: "/images/hero-cover.webp",
+        url: "/images/gallery/highlight-02-all-campuses-group.webp",
         width: 1200,
         height: 630,
         alt: "SVKM'S NMIMS Inter Campus Sports Championship 2026-27",
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: TOURNAMENT_CONFIG.fullName,
     description: "Official portal for SVKM'S NMIMS Inter Campus Sports Championship 2026-27.",
-    images: ["/images/hero-cover.webp"],
+    images: ["/images/gallery/highlight-02-all-campuses-group.webp"],
   },
 };
 
