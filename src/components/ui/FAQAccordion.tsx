@@ -47,7 +47,7 @@ export const CHAMPIONSHIP_FAQS: FAQItem[] = [
   {
     question: "Who do I contact?",
     answer:
-      "Contact Tushar Jain, Sports Director (+91 95886 75238), or Organising Committee members Aryan Pawar (+91 91569 88019), Mehi Manswa (+91 93249 79109), and Vishwesh Shukla (+91 95993 33064).",
+      "Contact Tushar Jain, Sports Incharge (+91 95886 75238), or Sports Council members Aryan Pawar (+91 91569 88019) and Mehi Manswa (+91 93249 79109).",
   },
 ];
 

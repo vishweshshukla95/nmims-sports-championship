@@ -1,12 +1,12 @@
 -- ============================================================================
--- SVKM'S NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27
+-- SVKM's NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27
 -- Seed Data (No Fixtures per Section 5)
 -- ============================================================================
 
 -- 1. EDITIONS
 INSERT INTO editions (id, name, is_current) VALUES
-('2026-27', 'SVKM''S NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27', true),
-('2025-26', 'SVKM''S NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2025-26', false)
+('2026-27', 'SVKM''s NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27', true),
+('2025-26', 'SVKM''s NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2025-26', false)
 ON CONFLICT (id) DO NOTHING;
 
 -- 2. SPORTS
@@ -115,7 +115,7 @@ ON CONFLICT (sport, stat_key) DO NOTHING;
 
 -- 6. CONTACTS (Section 14 Seed)
 INSERT INTO contacts (name, role, phone, "group", sort_order) VALUES
-('Tushar Jain', 'Sports Director, MPTP Shirpur Campus', '+91 95886 75238', 'director', 1),
-('Aryan Pawar', 'Organising Committee', '+91 91569 88019', 'committee', 2),
-('Mehi Manswa', 'Organising Committee', '+91 93249 79109', 'committee', 3),
-('Vishwesh Shukla', 'Organising Committee', '+91 95993 33064', 'committee', 4);
+('Dr. Kiran Anchan', 'Director – Sports, SVKM''s & NMIMS University', NULL, 'leadership', 1),
+('Tushar Jain', 'Sports Incharge, MPTP Shirpur Campus', '+91 95886 75238', 'committee', 2),
+('Aryan Pawar', 'Sports Council Member, MPTP Shirpur Campus', '+91 91569 88019', 'committee', 3),
+('Mehi Manswa', 'Sports Council Member, MPTP Shirpur Campus', '+91 93249 79109', 'committee', 4);

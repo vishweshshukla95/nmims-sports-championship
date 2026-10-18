@@ -9,12 +9,12 @@ import {
   Trophy,
   Filter,
   CalendarDays,
-  Sparkles,
   ArrowLeft,
 } from "lucide-react";
 import NavyPatchBackground from "@/components/ui/NavyPatchBackground";
 import MatchCard from "@/components/match/MatchCard";
 import MatchDetailsModal from "@/components/match/MatchDetailsModal";
+import PointsTable from "@/components/sports/PointsTable";
 import SportLeaderboard, {
   SportLeaderboardConfig,
 } from "@/components/leaderboard/SportLeaderboard";
@@ -22,15 +22,17 @@ import {
   SPORTS_CONFIG,
   CAMPUSES_CONFIG,
   TOURNAMENT_DAYS,
-  TOURNAMENT_CONFIG,
 } from "@/config/tournament";
-import { getMatches } from "@/lib/tournament-store";
-import { Match, CategoryGender, SportType } from "@/types/tournament";
+import { getMatches, fetchMatches, getTeams, fetchTeams } from "@/lib/tournament-store";
+import { getTeamGroups, fetchTeamGroups, fetchGroups } from "@/lib/groups-store";
+import { Match, CategoryGender, SportType, Team, TeamGroup, Group } from "@/types/tournament";
+
+export const dynamic = "force-dynamic";
 
 function SportDashboardContent() {
   const params = useParams();
   const searchParams = useSearchParams();
-  const sportSlug = params.sport as string;
+  const sportSlug = params.sport as SportType;
 
   const currentSport = SPORTS_CONFIG.find((s) => s.slug === sportSlug);
 
@@ -42,8 +44,9 @@ function SportDashboardContent() {
   const [selectedCategory, setSelectedCategory] =
     useState<CategoryGender>(defaultCategory);
 
-  // EXACTLY THREE TABS: Schedule · Results · Leaderboard
-  const [activeTab, setActiveTab] = useState<"schedule" | "results" | "leaderboard">(
+  // Tab state per Part 3: Schedule · Results · Points Table · Leaderboard
+  const hasLeaderboard = sportSlug !== "table-tennis" && sportSlug !== "lawn-tennis";
+  const [activeTab, setActiveTab] = useState<"schedule" | "results" | "points" | "leaderboard">(
     "schedule"
   );
 
@@ -55,8 +58,27 @@ function SportDashboardContent() {
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  // All matches from store
-  const allMatches = useMemo(() => getMatches(), []);
+  // Store data with live Supabase fetch
+  const [allMatches, setAllMatches] = useState<Match[]>(() => getMatches());
+  const [allTeams, setAllTeams] = useState<Team[]>(() => getTeams());
+  const [allGroups, setAllGroups] = useState<TeamGroup[]>(() => getTeamGroups());
+  const [groupsList, setGroupsList] = useState<Group[]>([]);
+
+  React.useEffect(() => {
+    async function loadData() {
+      const [m, t, g, grps] = await Promise.all([
+        fetchMatches(),
+        fetchTeams(),
+        fetchTeamGroups(),
+        fetchGroups(sportSlug, selectedCategory),
+      ]);
+      setAllMatches(m);
+      setAllTeams(t);
+      setAllGroups(g);
+      setGroupsList(grps);
+    }
+    loadData();
+  }, [sportSlug, selectedCategory]);
 
   // Filtered by sport and category
   const sportMatches = useMemo(() => {
@@ -102,6 +124,50 @@ function SportDashboardContent() {
       );
   }, [sportMatches]);
 
+  // Leaderboard config strictly matching Part 3 requirements
+  const leaderboardConfig = useMemo<SportLeaderboardConfig | null>(() => {
+    if (sportSlug === "cricket") {
+      return {
+        sportId: "cricket",
+        category: selectedCategory,
+        board1Title: "🏏 Highest Runs",
+        board1Unit: "Runs",
+        board1Data: [],
+        board2Title: "🎯 Most Wickets",
+        board2Unit: "Wickets",
+        board2Data: [],
+      };
+    }
+    if (sportSlug === "football") {
+      return {
+        sportId: "football",
+        category: selectedCategory,
+        board1Title: "⚽ Most Goals",
+        board1Unit: "Goals",
+        board1Data: [],
+      };
+    }
+    if (sportSlug === "basketball") {
+      return {
+        sportId: "basketball",
+        category: selectedCategory,
+        board1Title: "🏀 Most Points Scored",
+        board1Unit: "Points",
+        board1Data: [],
+      };
+    }
+    if (sportSlug === "volleyball") {
+      return {
+        sportId: "volleyball",
+        category: selectedCategory,
+        board1Title: "🏐 Most Points Scored",
+        board1Unit: "Points",
+        board1Data: [],
+      };
+    }
+    return null;
+  }, [sportSlug, selectedCategory]);
+
   if (!currentSport) {
     return (
       <div className="min-h-screen flex items-center justify-center text-center p-4">
@@ -114,60 +180,6 @@ function SportDashboardContent() {
       </div>
     );
   }
-
-  // Leaderboard config for this sport per Section 11
-  const leaderboardConfig: SportLeaderboardConfig = {
-    sportId: currentSport.slug as SportType,
-    category: selectedCategory,
-    board1Title:
-      currentSport.slug === "cricket"
-        ? "Highest Runs"
-        : currentSport.slug === "football"
-        ? "Top Scorers"
-        : currentSport.slug === "basketball"
-        ? "Top Scorers"
-        : currentSport.slug === "volleyball"
-        ? "Top Scorers"
-        : "Most Matches Won",
-    board1Unit:
-      currentSport.slug === "cricket"
-        ? "Runs"
-        : currentSport.slug === "football"
-        ? "Goals"
-        : currentSport.slug === "basketball"
-        ? "Points"
-        : currentSport.slug === "volleyball"
-        ? "Points"
-        : "Wins",
-    board1Data: [], // Calculated by SQL views in Supabase; empty until matches recorded
-    board2Title:
-      currentSport.slug === "cricket"
-        ? "Most Wickets"
-        : currentSport.slug === "football"
-        ? "Most Assists"
-        : currentSport.slug === "basketball"
-        ? "Most 3-Pointers"
-        : currentSport.slug === "volleyball"
-        ? "Best Blockers"
-        : currentSport.slug === "table-tennis"
-        ? "Most Games Won"
-        : "Most Sets Won",
-    board2Unit:
-      currentSport.slug === "cricket"
-        ? "Wickets"
-        : currentSport.slug === "football"
-        ? "Assists"
-        : currentSport.slug === "basketball"
-        ? "3PM"
-        : currentSport.slug === "volleyball"
-        ? "Blocks"
-        : currentSport.slug === "table-tennis"
-        ? "Games"
-        : "Sets",
-    board2Data: [],
-    mvpTitle: "⭐ Official MVP Standings",
-    mvpData: [],
-  };
 
   const openMatchDetails = (match: Match) => {
     setSelectedMatch(match);
@@ -210,7 +222,7 @@ function SportDashboardContent() {
               </p>
             </div>
 
-            {/* STICKY / DYNAMIC MEN / WOMEN TOGGLE (only where both exist) */}
+            {/* DYNAMIC MEN / WOMEN TOGGLE (only where both exist) */}
             {currentSport.hasMen && currentSport.hasWomen && (
               <div className="inline-flex p-1 rounded-full bg-[#0F122E]/90 border border-gold/40 shadow-lg backdrop-blur-md">
                 <button
@@ -241,15 +253,15 @@ function SportDashboardContent() {
         </div>
       </div>
 
-      {/* 2. THREE SECTIONS AS TABS: Schedule · Results · Leaderboard */}
+      {/* 2. TABS: Schedule · Results · Points Table · Leaderboard */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         {/* Navigation Tabs Bar */}
-        <div className="flex items-center justify-center border-b border-[rgba(217,178,111,0.2)] mb-8">
+        <div className="flex items-center justify-center border-b border-[rgba(217,178,111,0.2)] mb-8 overflow-x-auto no-scrollbar">
           <div className="flex space-x-2 sm:space-x-4">
             <button
               type="button"
               onClick={() => setActiveTab("schedule")}
-              className={`px-6 py-3 font-serif font-bold text-sm sm:text-base border-b-2 transition-all ${
+              className={`px-4 sm:px-6 py-3 font-serif font-bold text-xs sm:text-base border-b-2 transition-all whitespace-nowrap min-h-[44px] ${
                 activeTab === "schedule"
                   ? "border-gold text-gold"
                   : "border-transparent text-[#AEB3D6] hover:text-[#F4EFE3]"
@@ -260,7 +272,7 @@ function SportDashboardContent() {
             <button
               type="button"
               onClick={() => setActiveTab("results")}
-              className={`px-6 py-3 font-serif font-bold text-sm sm:text-base border-b-2 transition-all ${
+              className={`px-4 sm:px-6 py-3 font-serif font-bold text-xs sm:text-base border-b-2 transition-all whitespace-nowrap min-h-[44px] ${
                 activeTab === "results"
                   ? "border-gold text-gold"
                   : "border-transparent text-[#AEB3D6] hover:text-[#F4EFE3]"
@@ -270,98 +282,106 @@ function SportDashboardContent() {
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab("leaderboard")}
-              className={`px-6 py-3 font-serif font-bold text-sm sm:text-base border-b-2 transition-all ${
-                activeTab === "leaderboard"
+              onClick={() => setActiveTab("points")}
+              className={`px-4 sm:px-6 py-3 font-serif font-bold text-xs sm:text-base border-b-2 transition-all whitespace-nowrap min-h-[44px] ${
+                activeTab === "points"
                   ? "border-gold text-gold"
                   : "border-transparent text-[#AEB3D6] hover:text-[#F4EFE3]"
               }`}
             >
-              Leaderboard
+              Points Table
             </button>
+            {hasLeaderboard && (
+              <button
+                type="button"
+                onClick={() => setActiveTab("leaderboard")}
+                className={`px-4 sm:px-6 py-3 font-serif font-bold text-xs sm:text-base border-b-2 transition-all whitespace-nowrap min-h-[44px] ${
+                  activeTab === "leaderboard"
+                    ? "border-gold text-gold"
+                    : "border-transparent text-[#AEB3D6] hover:text-[#F4EFE3]"
+                }`}
+              >
+                Leaderboard
+              </button>
+            )}
           </div>
         </div>
 
-        {/* TAB 1: SCHEDULE ("COMING UP") */}
+        {/* TAB 1: SCHEDULE */}
         {activeTab === "schedule" && (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[rgba(217,178,111,0.15)]">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-serif font-black text-gold uppercase tracking-wide">
-                  COMING UP
-                </h2>
-                <p className="text-xs text-[#AEB3D6] mt-0.5">
-                  Scheduled matches for {currentSport.name} ({selectedCategory.toUpperCase()})
-                </p>
-              </div>
-
-              {/* Day and Campus Filter Chips */}
-              <div className="flex flex-wrap items-center gap-2">
-                {/* Day Filter */}
-                <div className="flex items-center gap-1 bg-[#161A40] p-1 rounded-xl border border-[rgba(217,178,111,0.2)]">
+            {/* Filter Chips: Days & Campuses */}
+            <div className="p-4 rounded-2xl bg-[#161A40]/80 border border-[rgba(217,178,111,0.2)] flex flex-col md:flex-row items-center justify-between gap-4">
+              {/* Day Chips */}
+              <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 no-scrollbar">
+                <span className="text-xs font-mono text-gold uppercase tracking-wider mr-1 flex items-center gap-1">
+                  <CalendarDays className="w-3.5 h-3.5" /> Day:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedDay("all")}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                    selectedDay === "all"
+                      ? "btn-gold"
+                      : "bg-[#0F122E] text-[#AEB3D6] hover:text-[#F4EFE3]"
+                  }`}
+                >
+                  All Days
+                </button>
+                {TOURNAMENT_DAYS.map((day) => (
                   <button
+                    key={day.dayNumber}
                     type="button"
-                    onClick={() => setSelectedDay("all")}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${
-                      selectedDay === "all" ? "bg-gold text-indigo-black" : "text-[#AEB3D6]"
+                    onClick={() => setSelectedDay(day.dayNumber)}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                      selectedDay === day.dayNumber
+                        ? "btn-gold"
+                        : "bg-[#0F122E] text-[#AEB3D6] hover:text-[#F4EFE3]"
                     }`}
                   >
-                    All Days
+                    Day {day.dayNumber} ({day.label.split(",")[0]})
                   </button>
-                  {TOURNAMENT_DAYS.map((d) => (
-                    <button
-                      key={d.dayNumber}
-                      type="button"
-                      onClick={() => setSelectedDay(d.dayNumber)}
-                      className={`px-2 py-1 rounded-lg text-xs font-semibold ${
-                        selectedDay === d.dayNumber
-                          ? "bg-gold text-indigo-black"
-                          : "text-[#AEB3D6] hover:text-[#F4EFE3]"
-                      }`}
-                    >
-                      D{d.dayNumber}
-                    </button>
-                  ))}
-                </div>
+                ))}
+              </div>
 
-                {/* Campus Filter */}
+              {/* Campus Filter */}
+              <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 no-scrollbar">
+                <span className="text-xs font-mono text-gold uppercase tracking-wider mr-1 flex items-center gap-1">
+                  <Filter className="w-3.5 h-3.5" /> Campus:
+                </span>
                 <select
                   value={selectedCampus}
                   onChange={(e) => setSelectedCampus(e.target.value)}
-                  className="px-3 py-1.5 rounded-xl bg-[#161A40] border border-[rgba(217,178,111,0.2)] text-xs text-gold font-semibold focus:outline-none"
+                  className="bg-[#0F122E] text-xs font-semibold text-[#F4EFE3] px-3 py-1.5 rounded-xl border border-[rgba(217,178,111,0.3)] focus:outline-none focus:border-gold"
                 >
                   <option value="all">All Campuses</option>
                   {CAMPUSES_CONFIG.map((c) => (
                     <option key={c.shortCode} value={c.shortCode}>
-                      {c.shortCode} - {c.city}
+                      {c.shortCode} – {c.name}
                     </option>
                   ))}
                 </select>
               </div>
             </div>
 
-            {/* Match List or Empty State */}
+            {/* Matches Grid */}
             {scheduledMatches.length === 0 ? (
-              <div className="p-12 sm:p-16 rounded-3xl bg-[#161A40]/80 border-2 border-gold/30 text-center max-w-2xl mx-auto shadow-xl">
-                <Calendar className="w-14 h-14 text-gold mx-auto mb-4 stroke-1" />
-                <h3 className="text-2xl font-serif font-bold text-gold uppercase tracking-wider">
-                  COMING UP
+              <div className="p-16 rounded-2xl bg-[#161A40]/40 border border-[rgba(217,178,111,0.15)] text-center max-w-lg mx-auto">
+                <Calendar className="w-10 h-10 text-gold/60 mx-auto mb-3" />
+                <h3 className="text-lg font-serif font-bold text-gold-light">
+                  No Fixtures Found
                 </h3>
-                <p className="text-sm sm:text-base text-[#F4EFE3]/90 mt-3 leading-relaxed">
-                  Fixtures for {currentSport.name} ({selectedCategory === "women" ? "Women" : "Men"}) will be announced soon. Stay tuned!
+                <p className="text-xs text-[#AEB3D6] mt-2 leading-relaxed">
+                  No scheduled fixtures match your current filters. Try selecting All Days or All Campuses.
                 </p>
-                <div className="mt-6 pt-4 border-t border-[rgba(217,178,111,0.15)] text-xs text-[#AEB3D6]">
-                  Tournament Dates: <strong>{TOURNAMENT_CONFIG.dates}</strong> at MPTP Shirpur
-                </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {scheduledMatches.map((match) => (
                   <MatchCard
                     key={match.id}
                     match={match}
-                    type="scheduled"
-                    onSelect={openMatchDetails}
+                    onOpenDetails={openMatchDetails}
                   />
                 ))}
               </div>
@@ -369,36 +389,26 @@ function SportDashboardContent() {
           </div>
         )}
 
-        {/* TAB 2: RESULTS */}
+        {/* TAB 2: RESULTS (Completed Matches) */}
         {activeTab === "results" && (
           <div className="space-y-6">
-            <div className="pb-4 border-b border-[rgba(217,178,111,0.15)]">
-              <h2 className="text-xl sm:text-2xl font-serif font-black text-gold uppercase tracking-wide">
-                MATCH RESULTS
-              </h2>
-              <p className="text-xs text-[#AEB3D6] mt-0.5">
-                Official completed match scorecards and Man of the Match awards
-              </p>
-            </div>
-
             {completedMatches.length === 0 ? (
-              <div className="p-12 sm:p-16 rounded-3xl bg-[#161A40]/80 border border-[rgba(217,178,111,0.2)] text-center max-w-2xl mx-auto shadow-xl">
-                <Trophy className="w-14 h-14 text-gold mx-auto mb-4 stroke-1" />
-                <h3 className="text-xl font-serif font-bold text-gold-light">
-                  No Results Yet
+              <div className="p-16 rounded-2xl bg-[#161A40]/40 border border-[rgba(217,178,111,0.15)] text-center max-w-lg mx-auto">
+                <Trophy className="w-10 h-10 text-gold/60 mx-auto mb-3" />
+                <h3 className="text-lg font-serif font-bold text-gold-light">
+                  No Completed Matches Yet
                 </h3>
-                <p className="text-sm text-[#AEB3D6] mt-2">
-                  Results will appear here after the first match.
+                <p className="text-xs text-[#AEB3D6] mt-2 leading-relaxed">
+                  Results, scoresheets, and Man of the Match awards will appear here as fixtures are played and declared.
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {completedMatches.map((match) => (
                   <MatchCard
                     key={match.id}
                     match={match}
-                    type="result"
-                    onSelect={openMatchDetails}
+                    onOpenDetails={openMatchDetails}
                   />
                 ))}
               </div>
@@ -406,24 +416,38 @@ function SportDashboardContent() {
           </div>
         )}
 
-        {/* TAB 3: LEADERBOARD */}
-        {activeTab === "leaderboard" && (
+        {/* TAB 3: POINTS TABLE (Side-by-side Group A and Group B) */}
+        {activeTab === "points" && (
           <div className="space-y-6">
-            <div className="pb-4 border-b border-[rgba(217,178,111,0.15)]">
-              <h2 className="text-xl sm:text-2xl font-serif font-black text-gold uppercase tracking-wide">
-                STATISTICAL LEADERBOARDS
-              </h2>
-              <p className="text-xs text-[#AEB3D6] mt-0.5">
-                Official aggregated statistics and MVP ranking for {currentSport.name} ({selectedCategory.toUpperCase()})
-              </p>
+            <div className="flex items-center justify-between pb-2 border-b border-[rgba(217,178,111,0.2)]">
+              <h3 className="text-lg sm:text-xl font-serif font-bold text-gold uppercase tracking-wider">
+                {currentSport.name} ({selectedCategory.toUpperCase()}) – GROUP STAGE
+              </h3>
+              <span className="text-xs font-mono text-gold-light/80">
+                Top 2 Qualify for Semi-Finals
+              </span>
             </div>
 
+            <PointsTable
+              sportId={sportSlug}
+              category={selectedCategory}
+              teams={allTeams}
+              groups={groupsList}
+              teamGroups={allGroups}
+              matches={allMatches}
+            />
+          </div>
+        )}
+
+        {/* TAB 4: LEADERBOARD (Only if hasLeaderboard) */}
+        {activeTab === "leaderboard" && hasLeaderboard && leaderboardConfig && (
+          <div className="space-y-6">
             <SportLeaderboard config={leaderboardConfig} />
           </div>
         )}
       </div>
 
-      {/* Match Details Modal */}
+      {/* MATCH DETAILS MODAL */}
       <MatchDetailsModal
         match={selectedMatch}
         isOpen={modalOpen}
@@ -437,8 +461,8 @@ export default function SportDashboardPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-navy flex items-center justify-center text-gold font-serif text-lg">
-          Loading Dashboard...
+        <div className="min-h-screen bg-navy flex items-center justify-center text-gold font-serif">
+          Loading Championship Dashboard...
         </div>
       }
     >
@@ -446,4 +470,3 @@ export default function SportDashboardPage() {
     </Suspense>
   );
 }
-

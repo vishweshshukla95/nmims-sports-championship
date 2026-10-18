@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { Clock, Calendar, AlertCircle } from "lucide-react";
+import { Clock, AlertCircle } from "lucide-react";
 import { TOURNAMENT_CONFIG } from "@/config/tournament";
 
+const emptySubscribe = () => () => {};
+
 export default function CountdownTimer() {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -17,7 +19,6 @@ export default function CountdownTimer() {
   });
 
   useEffect(() => {
-    setMounted(true);
     const tournamentStart = new Date("2026-10-27T09:00:00+05:30").getTime();
     const tournamentEnd = new Date("2026-10-31T20:00:00+05:30").getTime();
 

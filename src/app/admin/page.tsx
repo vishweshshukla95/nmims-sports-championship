@@ -1,32 +1,31 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import Link from "next/link";
 import {
   Calendar,
   CheckCircle2,
   AlertCircle,
-  Trophy,
   PlusCircle,
   FileEdit,
-  ArrowRight,
-  TrendingUp,
+  Clock,
+  BarChart2,
 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { SPORTS_CONFIG, TOURNAMENT_CONFIG } from "@/config/tournament";
+import { SPORTS_CONFIG } from "@/config/tournament";
 import { getMatches } from "@/lib/tournament-store";
 
 export default function AdminDashboardPage() {
   const matches = useMemo(() => getMatches(), []);
 
-  // Today's date mock or actual
   const todayIso = "2026-10-27";
 
-  const scheduledToday = matches.filter(
-    (m) =>
-      m.status === "Scheduled" &&
-      m.scheduledAt &&
-      m.scheduledAt.startsWith(todayIso)
+  const matchesToday = matches.filter(
+    (m) => m.scheduledAt && m.scheduledAt.startsWith(todayIso)
+  ).length;
+
+  const matchesUpcoming = matches.filter(
+    (m) => m.status === "Scheduled" || m.status === "Postponed"
   ).length;
 
   const totalCompleted = matches.filter((m) => m.status === "Completed").length;
@@ -41,7 +40,7 @@ export default function AdminDashboardPage() {
     <AdminLayout>
       <div className="space-y-8">
         {/* Top Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-[rgba(217,178,111,0.2)]">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-6 border-b border-[rgba(217,178,111,0.2)]">
           <div>
             <span className="text-xs font-mono font-bold uppercase tracking-wider text-gold">
               Control Centre
@@ -54,33 +53,41 @@ export default function AdminDashboardPage() {
             </p>
           </div>
 
-          {/* Quick Actions */}
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+          {/* Quick Buttons: Add Match, Enter Result, Update Points Table */}
+          <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
             <Link
               href="/admin/matches?action=new"
-              className="flex-1 sm:flex-none px-5 py-2.5 rounded-full btn-gold text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm min-h-[44px]"
+              className="px-4 py-2.5 rounded-full btn-gold text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm min-h-[40px]"
             >
               <PlusCircle className="w-4 h-4" />
               <span>Add Match</span>
             </Link>
 
             <Link
-              href="/admin/matches?tab=enter-result"
-              className="flex-1 sm:flex-none px-5 py-2.5 rounded-full btn-royal text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 min-h-[44px]"
+              href="/admin/results"
+              className="px-4 py-2.5 rounded-full btn-royal text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 min-h-[40px]"
             >
               <FileEdit className="w-4 h-4 text-gold" />
               <span>Enter Result</span>
             </Link>
+
+            <Link
+              href="/admin/points"
+              className="px-4 py-2.5 rounded-full btn-outline-gold text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 min-h-[40px]"
+            >
+              <BarChart2 className="w-4 h-4 text-gold" />
+              <span>Update Points Table</span>
+            </Link>
           </div>
         </div>
 
-        {/* 4 Stat Metric Cards */}
+        {/* 4 Stat Metric Cards (Today, Upcoming, Completed, Pending Results) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Card 1: Matches Scheduled Today */}
+          {/* Matches Today */}
           <div className="card-championship p-6 border border-[rgba(217,178,111,0.25)] flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase text-[#AEB3D6]">
-                Scheduled Today
+                Matches Today
               </span>
               <div className="p-2 rounded-xl bg-[#20255A] text-gold">
                 <Calendar className="w-5 h-5" />
@@ -88,7 +95,7 @@ export default function AdminDashboardPage() {
             </div>
             <div className="mt-4">
               <span className="text-3xl sm:text-4xl font-mono font-black text-gold">
-                {scheduledToday}
+                {matchesToday}
               </span>
               <span className="text-xs text-[#AEB3D6] block mt-1">
                 Day 1 (27 Oct 2026)
@@ -96,7 +103,27 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          {/* Card 2: Completed Matches */}
+          {/* Upcoming Matches */}
+          <div className="card-championship p-6 border border-[rgba(217,178,111,0.25)] flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase text-[#AEB3D6]">
+                Upcoming Matches
+              </span>
+              <div className="p-2 rounded-xl bg-[#20255A] text-blue-400">
+                <Clock className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <span className="text-3xl sm:text-4xl font-mono font-black text-blue-400">
+                {matchesUpcoming}
+              </span>
+              <span className="text-xs text-[#AEB3D6] block mt-1">
+                Scheduled / Postponed
+              </span>
+            </div>
+          </div>
+
+          {/* Completed Matches */}
           <div className="card-championship p-6 border border-[rgba(217,178,111,0.25)] flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase text-[#AEB3D6]">
@@ -116,11 +143,11 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          {/* Card 3: Pending Entry */}
+          {/* Pending Results / Incomplete Stats */}
           <div className="card-championship p-6 border border-[rgba(217,178,111,0.25)] flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase text-[#AEB3D6]">
-                Pending Actions
+                Pending Results
               </span>
               <div className="p-2 rounded-xl bg-[#20255A] text-warning">
                 <AlertCircle className="w-5 h-5" />
@@ -135,29 +162,9 @@ export default function AdminDashboardPage() {
               </span>
             </div>
           </div>
-
-          {/* Card 4: Total Sports Active */}
-          <div className="card-championship p-6 border border-[rgba(217,178,111,0.25)] flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase text-[#AEB3D6]">
-                Active Sports
-              </span>
-              <div className="p-2 rounded-xl bg-[#20255A] text-gold">
-                <Trophy className="w-5 h-5" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <span className="text-3xl sm:text-4xl font-mono font-black text-gold">
-                {SPORTS_CONFIG.length}
-              </span>
-              <span className="text-xs text-[#AEB3D6] block mt-1">
-                10 Total Categories
-              </span>
-            </div>
-          </div>
         </div>
 
-        {/* Total Matches Per Sport Grid */}
+        {/* Total Matches Scheduled Per Sport Grid */}
         <div className="p-6 sm:p-8 rounded-3xl bg-[#161A40] border border-[rgba(217,178,111,0.2)] space-y-6">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-serif font-bold text-gold-light uppercase">

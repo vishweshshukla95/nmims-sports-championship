@@ -1,98 +1,94 @@
-import { CAMPUSES_CONFIG, SPORTS_CONFIG } from "@/config/tournament";
-import { Team, Match, LeaderboardEntry, SportType, CategoryGender } from "@/types/tournament";
+import { Team, Match } from "@/types/tournament";
+import { getSeededTeams, OFFICIAL_SQUAD_SIZES } from "./seed-teams";
+export { getSeededTeams, OFFICIAL_SQUAD_SIZES };
+import {
+  getTeamsAction,
+  getMatchesAction,
+  saveMatchAction,
+  deleteMatchAction,
+  upsertTeamAction,
+} from "@/app/actions/tournament";
 
-// Generate all 70 seeded teams: 7 Campuses × 10 Categories
-export function getSeededTeams(): Team[] {
-  const teams: Team[] = [];
+// In-memory runtime cache for synchronous fallbacks
+let runtimeMatchesCache: Match[] = [];
+let runtimeTeamsCache: Team[] = [];
 
-  CAMPUSES_CONFIG.forEach((campus) => {
-    SPORTS_CONFIG.forEach((sport) => {
-      if (sport.hasMen) {
-        teams.push({
-          id: `${campus.shortCode.toLowerCase()}-${sport.slug}-men`,
-          campusId: campus.id,
-          sportId: sport.slug as SportType,
-          category: "men",
-          name: `${campus.name} – ${sport.name} (Men)`,
-          players: [],
-        });
-      }
-      if (sport.hasWomen) {
-        teams.push({
-          id: `${campus.shortCode.toLowerCase()}-${sport.slug}-women`,
-          campusId: campus.id,
-          sportId: sport.slug as SportType,
-          category: "women",
-          name: `${campus.name} – ${sport.name} (Women)`,
-          players: [],
-        });
-      }
-    });
-  });
-
-  return teams;
+export function getTeams(): Team[] {
+  if (runtimeTeamsCache.length > 0) return runtimeTeamsCache;
+  return getSeededTeams();
 }
 
-// Global in-memory / localStorage storage helper for client & demo interaction
-let customMatches: Match[] = [];
+export function setRuntimeTeams(teams: Team[]): void {
+  runtimeTeamsCache = teams;
+}
+
+export async function fetchTeams(): Promise<Team[]> {
+  try {
+    const teams = await getTeamsAction();
+    if (teams.length > 0) {
+      runtimeTeamsCache = teams;
+      return teams;
+    }
+  } catch (err) {
+    console.warn("fetchTeams fallback to seeded teams:", err);
+  }
+  return getSeededTeams();
+}
+
+export async function saveTeams(teams: Team[]): Promise<void> {
+  runtimeTeamsCache = teams;
+  for (const team of teams) {
+    await upsertTeamAction(team);
+  }
+}
 
 export function getMatches(): Match[] {
-  // If user or admin added matches in browser session:
-  if (typeof window !== "undefined") {
-    try {
-      const stored = localStorage.getItem("nmims_matches");
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (e) {
-      // Fallback
-    }
-  }
-  return customMatches;
+  return runtimeMatchesCache;
 }
 
-export function saveMatch(match: Match): void {
-  const current = getMatches();
-  const index = current.findIndex((m) => m.id === match.id);
-  let updated: Match[];
-  if (index >= 0) {
-    updated = [...current];
-    updated[index] = match;
-  } else {
-    updated = [match, ...current];
-  }
-  customMatches = updated;
-  if (typeof window !== "undefined") {
-    try {
-      localStorage.setItem("nmims_matches", JSON.stringify(updated));
-    } catch (e) {
-      // ignore
-    }
+export function setRuntimeMatches(matches: Match[]): void {
+  runtimeMatchesCache = matches;
+}
+
+export async function fetchMatches(): Promise<Match[]> {
+  try {
+    const matches = await getMatchesAction();
+    runtimeMatchesCache = matches;
+    return matches;
+  } catch (err) {
+    console.warn("fetchMatches error:", err);
+    return runtimeMatchesCache;
   }
 }
 
-export function deleteMatch(id: string): void {
-  const current = getMatches();
-  const updated = current.filter((m) => m.id !== id);
-  customMatches = updated;
-  if (typeof window !== "undefined") {
-    try {
-      localStorage.setItem("nmims_matches", JSON.stringify(updated));
-    } catch (e) {
-      // ignore
+export async function saveMatch(match: Match): Promise<{ success: boolean; error?: string }> {
+  const res = await saveMatchAction(match);
+  if (res.success) {
+    const current = runtimeMatchesCache;
+    const index = current.findIndex((m) => m.id === match.id);
+    if (index >= 0) {
+      current[index] = match;
+    } else {
+      current.unshift(match);
     }
+    runtimeMatchesCache = [...current];
   }
+  return res;
 }
 
-export function clearDemoMatches(): void {
-  const current = getMatches();
-  const updated = current.filter((m) => !m.isDemo);
-  customMatches = updated;
-  if (typeof window !== "undefined") {
-    try {
-      localStorage.setItem("nmims_matches", JSON.stringify(updated));
-    } catch (e) {
-      // ignore
-    }
+export async function deleteMatch(id: string): Promise<{ success: boolean; error?: string }> {
+  const res = await deleteMatchAction(id);
+  if (res.success) {
+    runtimeMatchesCache = runtimeMatchesCache.filter((m) => m.id !== id);
   }
+  return res;
+}
+
+export async function clearDemoMatches(): Promise<void> {
+  const current = runtimeMatchesCache;
+  const toDelete = current.filter((m) => m.isDemo);
+  for (const m of toDelete) {
+    await deleteMatchAction(m.id);
+  }
+  runtimeMatchesCache = current.filter((m) => !m.isDemo);
 }

@@ -3,11 +3,9 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import {
-  FileText,
   ShieldCheck,
   Download,
   ChevronDown,
-  AlertOctagon,
   CheckCircle2,
 } from "lucide-react";
 import NavyPatchBackground from "@/components/ui/NavyPatchBackground";

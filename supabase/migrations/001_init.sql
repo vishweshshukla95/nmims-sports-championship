@@ -1,5 +1,5 @@
 -- ============================================================================
--- SVKM'S NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27
+-- SVKM's NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27
 -- Database Initialization & Schema Definition
 -- ============================================================================
 

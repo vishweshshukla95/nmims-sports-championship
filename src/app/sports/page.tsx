@@ -1,14 +1,14 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Trophy, Calendar, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Calendar, CheckCircle2 } from "lucide-react";
 import NavyPatchBackground from "@/components/ui/NavyPatchBackground";
-import { SPORTS_CONFIG, TOURNAMENT_CONFIG } from "@/config/tournament";
+import { SPORTS_CONFIG } from "@/config/tournament";
 
 export const metadata = {
   title: "Sports Overview",
   description:
-    "Explore all 6 disciplines and 10 categories at the SVKM'S NMIMS Inter Campus Sports Championship 2026-27.",
+    "Explore all 6 disciplines and 10 categories at the SVKM's NMIMS Inter Campus Sports Championship 2026-27.",
 };
 
 export default function SportsOverviewPage() {

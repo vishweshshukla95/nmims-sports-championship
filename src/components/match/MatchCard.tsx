@@ -1,26 +1,28 @@
 "use client";
 
 import React from "react";
-import { Calendar, Clock, MapPin, Award, CalendarPlus } from "lucide-react";
+import { MapPin, Award, CalendarPlus } from "lucide-react";
 import CampusBadge from "@/components/ui/CampusBadge";
 import { Match } from "@/types/tournament";
 import { downloadIcsFile } from "@/lib/calendar";
 
-interface MatchCardProps {
+export interface MatchCardProps {
   match: Match;
   onSelect?: (match: Match) => void;
+  onOpenDetails?: (match: Match) => void;
   type?: "scheduled" | "result";
 }
 
-export default function MatchCard({ match, onSelect, type = "scheduled" }: MatchCardProps) {
+export default function MatchCard({ match, onSelect, onOpenDetails, type = "scheduled" }: MatchCardProps) {
   const isFinal = match.round === "Final";
   const isCompleted = match.status === "Completed" || type === "result";
+  const handleClick = onOpenDetails || onSelect;
 
   const handleCalendarClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     downloadIcsFile({
       title: `${match.round}: ${match.teamAName} vs ${match.teamBName}`,
-      description: `SVKM'S NMIMS Inter Campus Sports Championship 2026-27 - ${match.sportId.toUpperCase()} (${match.category.toUpperCase()})\nMatch #${match.matchNo} (${match.round})\nVenue: ${match.venue}`,
+      description: `SVKM's NMIMS Inter Campus Sports Championship 2026-27 - ${match.sportId.toUpperCase()} (${match.category.toUpperCase()})\nMatch #${match.matchNo} (${match.round})\nVenue: ${match.venue}`,
       location: `${match.venue}, Mukesh Patel Technology Park, Shirpur`,
       startDate: match.scheduledAt,
     });
@@ -38,9 +40,9 @@ export default function MatchCard({ match, onSelect, type = "scheduled" }: Match
 
   return (
     <div
-      onClick={() => onSelect && onSelect(match)}
+      onClick={() => handleClick && handleClick(match)}
       className={`card-championship p-5 relative overflow-hidden transition-all duration-300 ${
-        onSelect ? "cursor-pointer" : ""
+        handleClick ? "cursor-pointer" : ""
       } ${
         isFinal
           ? "border-2 border-gold shadow-gold-glow"

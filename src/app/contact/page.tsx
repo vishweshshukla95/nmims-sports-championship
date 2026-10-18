@@ -5,26 +5,30 @@ import {
   MessageSquare,
   MapPin,
   ExternalLink,
-  Shield,
+  Award,
   Users,
 } from "lucide-react";
 import NavyPatchBackground from "@/components/ui/NavyPatchBackground";
 import { TOURNAMENT_CONFIG } from "@/config/tournament";
-import { CONTACTS_CONFIG } from "@/config/contacts";
+import { LEADERSHIP_CONFIG, COMMITTEE_CONFIG } from "@/config/contacts";
+import { getContactsAction } from "@/app/actions/contacts";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Contact",
   description:
-    "Official contacts for SVKM'S NMIMS Inter Campus Sports Championship 2026-27. Sports Director Tushar Jain and Organising Committee.",
+    "Official contacts for SVKM's NMIMS Inter Campus Sports Championship 2026-27. Sports Leadership and Organising Committee.",
 };
 
-export default function ContactPage() {
-  const director = CONTACTS_CONFIG.find((c) => c.group === "director");
-  const committee = CONTACTS_CONFIG.filter((c) => c.group === "committee");
-
+export default async function ContactPage() {
+  const contacts = await getContactsAction();
+  const leadership = contacts.find((c) => c.group === "leadership") || LEADERSHIP_CONFIG;
+  const committee = contacts.filter((c) => c.group === "committee");
+  const committeeList = committee.length > 0 ? committee : COMMITTEE_CONFIG;
   return (
     <NavyPatchBackground variant="calm" className="min-h-screen pb-24">
-      {/* 1. Header Banner: highlight-06-felicitation.webp */}
+      {/* 1. Header Banner */}
       <div className="relative h-64 sm:h-80 w-full overflow-hidden border-b border-[rgba(217,178,111,0.25)]">
         <Image
           src="/images/gallery/highlight-06-felicitation.webp"
@@ -44,76 +48,58 @@ export default function ContactPage() {
             CONTACT COMMITTEE
           </h1>
           <p className="mt-2 text-xs sm:text-sm text-[#AEB3D6] max-w-xl">
-            Reach out to the Sports Director and Organising Committee for arrivals, fixtures, emergencies, and coordination.
+            Reach out to the Sports Leadership and Organising Committee for tournament inquiries, arrivals, and logistical coordination.
           </p>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 space-y-16">
-        {/* 2. Sports Director (Prominent Card) */}
-        {director && (
-          <div className="max-w-2xl mx-auto">
-            <div className="text-center mb-6">
-              <span className="text-xs font-mono font-bold uppercase tracking-widest text-gold">
-                Leadership
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-serif font-black uppercase text-gold-gradient mt-1">
-                Sports Director
-              </h2>
+        {/* 2. LEADERSHIP: Single card, NO phone number, NO Call/WhatsApp buttons */}
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-6">
+            <span className="text-xs font-mono font-bold uppercase tracking-widest text-gold">
+              Patron & Direction
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-serif font-black uppercase text-gold-gradient mt-1">
+              Leadership
+            </h2>
+          </div>
+
+          <div className="card-championship p-8 border-2 border-gold/40 shadow-gold-glow flex flex-col sm:flex-row items-center justify-center text-center sm:text-left gap-6 bg-gradient-to-br from-[#20255A] via-[#161A40] to-[#0F122E]">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-gold/20 to-gold-dark/10 border border-gold/40 flex items-center justify-center text-gold shadow-md flex-shrink-0">
+              <Award className="w-8 h-8 text-gold" />
             </div>
 
-            <div className="card-championship p-8 border-2 border-gold/40 shadow-gold-glow flex flex-col sm:flex-row items-center justify-between gap-6 bg-gradient-to-br from-[#20255A] to-[#161A40]">
-              <div className="text-center sm:text-left">
-                <h3 className="text-2xl font-serif font-bold text-gold-light">
-                  {director.name}
-                </h3>
-                <p className="text-xs text-[#AEB3D6] mt-1 font-medium">
-                  {director.role}
-                </p>
-                <p className="text-xs text-gold/80 font-mono mt-2">
-                  MPTP Shirpur Campus, Dist. Dhule
-                </p>
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-gold/15 text-gold text-[10px] font-bold uppercase tracking-wider mb-2">
+                Tournament Patron
               </div>
-
-              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                <a
-                  href={`tel:${director.phone}`}
-                  className="px-5 py-2.5 rounded-full btn-gold text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2"
-                >
-                  <Phone className="w-3.5 h-3.5" />
-                  <span>Call {director.phone}</span>
-                </a>
-
-                <a
-                  href={`https://wa.me/${director.cleanPhone}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-5 py-2.5 rounded-full btn-royal text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2"
-                >
-                  <MessageSquare className="w-3.5 h-3.5 text-success" />
-                  <span>WhatsApp</span>
-                </a>
-              </div>
+              <h3 className="text-2xl sm:text-3xl font-serif font-bold text-gold-light">
+                {leadership.name}
+              </h3>
+              <p className="text-sm text-[#AEB3D6] mt-1 font-medium">
+                {leadership.role}
+              </p>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* 3. Organising Committee (Cards) */}
+        {/* 3. ORGANISING COMMITTEE: Three cards, each with its own Call and WhatsApp buttons */}
         <div>
           <div className="text-center max-w-2xl mx-auto mb-8">
             <span className="text-xs font-mono font-bold uppercase tracking-widest text-gold">
-              Coordinators
+              Tournament Secretariat
             </span>
             <h2 className="text-2xl sm:text-3xl font-serif font-black uppercase text-gold-gradient mt-1">
               Organising Committee
             </h2>
             <p className="text-xs sm:text-sm text-[#AEB3D6] mt-1">
-              Available 24/7 for team assistance, scheduling updates, and pick-up logistics:
+              Available for team assistance, schedule updates, arrivals, and campus coordination:
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {committee.map((member) => (
+            {committeeList.map((member) => (
               <div
                 key={member.name}
                 className="card-championship p-6 border border-[rgba(217,178,111,0.25)] flex flex-col justify-between"

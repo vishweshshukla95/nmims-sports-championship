@@ -13,7 +13,6 @@ import {
   CheckSquare,
   PhoneCall,
   ExternalLink,
-  AlertTriangle,
 } from "lucide-react";
 import NavyPatchBackground from "@/components/ui/NavyPatchBackground";
 import { TOURNAMENT_CONFIG } from "@/config/tournament";

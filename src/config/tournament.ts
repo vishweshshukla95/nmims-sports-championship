@@ -16,10 +16,11 @@ export interface CampusConfig {
   city: string;
   state: string;
   isHost: boolean;
+  slug: string;
 }
 
 export const TOURNAMENT_CONFIG = {
-  fullName: "SVKM'S NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27",
+  fullName: "SVKM's NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27",
   shortName: "NMIMS Sports Championship 2026-27",
   pwaShortName: "NMIMS Sports 26-27",
   dates: "27th – 31st October 2026",
@@ -93,7 +94,7 @@ export const SPORTS_CONFIG: SportConfig[] = [
     name: "Table Tennis",
     slug: "table-tennis",
     hasMen: true,
-    hasWomen: false,
+    hasWomen: false, // TODO: Table Tennis Women (Mumbai 1) pending separate confirmation
     icon: "🏓",
     image: "/images/sports/table-tennis.webp",
     description: "Precision singles, doubles, and rubber ties for Men.",
@@ -103,7 +104,7 @@ export const SPORTS_CONFIG: SportConfig[] = [
     name: "Lawn Tennis",
     slug: "lawn-tennis",
     hasMen: true,
-    hasWomen: false,
+    hasWomen: false, // TODO: Lawn Tennis Women (Hyderabad 2, Bengaluru 1) pending separate confirmation
     icon: "🎾",
     image: "/images/sports/lawn-tennis.webp",
     description: "Singles and doubles sets on the Shirpur tennis courts.",
@@ -118,6 +119,7 @@ export const CAMPUSES_CONFIG: CampusConfig[] = [
     city: "Mumbai",
     state: "Maharashtra",
     isHost: false,
+    slug: "mumbai",
   },
   {
     id: "nvm",
@@ -126,14 +128,7 @@ export const CAMPUSES_CONFIG: CampusConfig[] = [
     city: "Navi Mumbai",
     state: "Maharashtra",
     isHost: false,
-  },
-  {
-    id: "shi",
-    name: "NMIMS Shirpur",
-    shortCode: "SHI",
-    city: "Shirpur",
-    state: "Maharashtra",
-    isHost: true,
+    slug: "navi-mumbai",
   },
   {
     id: "ind",
@@ -142,6 +137,7 @@ export const CAMPUSES_CONFIG: CampusConfig[] = [
     city: "Indore",
     state: "Madhya Pradesh",
     isHost: false,
+    slug: "indore",
   },
   {
     id: "blr",
@@ -150,6 +146,7 @@ export const CAMPUSES_CONFIG: CampusConfig[] = [
     city: "Bengaluru",
     state: "Karnataka",
     isHost: false,
+    slug: "bengaluru",
   },
   {
     id: "hyd",
@@ -158,6 +155,7 @@ export const CAMPUSES_CONFIG: CampusConfig[] = [
     city: "Hyderabad",
     state: "Telangana",
     isHost: false,
+    slug: "hyderabad",
   },
   {
     id: "chd",
@@ -166,6 +164,16 @@ export const CAMPUSES_CONFIG: CampusConfig[] = [
     city: "Chandigarh",
     state: "Chandigarh",
     isHost: false,
+    slug: "chandigarh",
+  },
+  {
+    id: "shi",
+    name: "NMIMS Shirpur",
+    shortCode: "SHI",
+    city: "Shirpur",
+    state: "Maharashtra",
+    isHost: true,
+    slug: "shirpur",
   },
 ];
 

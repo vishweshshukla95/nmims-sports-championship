@@ -1,26 +1,21 @@
 "use client";
 
-import React, { useState, useMemo, Suspense } from "react";
+import React, { useState, useEffect, useMemo, Suspense } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import {
-  Users,
-  Shield,
   ChevronDown,
   ChevronUp,
   MapPin,
-  Filter,
-  CheckCircle2,
 } from "lucide-react";
 import NavyPatchBackground from "@/components/ui/NavyPatchBackground";
 import CampusBadge from "@/components/ui/CampusBadge";
 import {
   CAMPUSES_CONFIG,
   SPORTS_CONFIG,
-  TOURNAMENT_CONFIG,
 } from "@/config/tournament";
-import { getSeededTeams } from "@/lib/tournament-store";
-import { Team, Player, SportType, CategoryGender } from "@/types/tournament";
+import { fetchTeams, getSeededTeams } from "@/lib/tournament-store";
+import { Team } from "@/types/tournament";
 
 function TeamsContent() {
   const searchParams = useSearchParams();
@@ -33,8 +28,18 @@ function TeamsContent() {
   const [selectedSport, setSelectedSport] = useState<string>("all");
   const [expandedTeamId, setExpandedTeamId] = useState<string | null>(null);
 
-  // All 70 seeded teams
-  const allTeams = useMemo(() => getSeededTeams(), []);
+  // Teams from Supabase (with seeded fallback)
+  const [allTeams, setAllTeams] = useState<Team[]>(getSeededTeams());
+
+  useEffect(() => {
+    fetchTeams()
+      .then((data) => {
+        if (data && data.length > 0) {
+          setAllTeams(data);
+        }
+      })
+      .catch((err) => console.error("fetchTeams error:", err));
+  }, []);
 
   // Filtered teams
   const filteredTeams = useMemo(() => {
@@ -223,15 +228,22 @@ function TeamsContent() {
                                 <h3 className="font-serif font-bold text-sm sm:text-base text-gold-light">
                                   {team.name}
                                 </h3>
-                                <span
-                                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                                    team.category === "women"
-                                      ? "bg-women/15 text-women"
-                                      : "bg-men/15 text-men"
-                                  }`}
-                                >
-                                  {team.category.toUpperCase()}
-                                </span>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span
+                                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                                      team.category === "women"
+                                        ? "bg-women/15 text-women"
+                                        : "bg-men/15 text-men"
+                                    }`}
+                                  >
+                                    {team.category.toUpperCase()}
+                                  </span>
+                                  {team.squadSize && (
+                                    <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-gold/15 text-gold border border-gold/30">
+                                      Squad: {team.squadSize}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
 
@@ -346,9 +358,16 @@ function TeamsContent() {
                             <h3 className="font-serif font-bold text-sm text-gold-light">
                               {team.name}
                             </h3>
-                            <span className="text-[11px] text-[#AEB3D6]">
-                              {team.category.toUpperCase()}
-                            </span>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-[11px] font-bold text-[#AEB3D6]">
+                                {team.category.toUpperCase()}
+                              </span>
+                              {team.squadSize && (
+                                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-gold/15 text-gold border border-gold/30">
+                                  Squad: {team.squadSize}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
 

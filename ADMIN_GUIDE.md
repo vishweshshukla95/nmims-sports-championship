@@ -1,5 +1,5 @@
 # Volunteer & Admin User Guide
-### SVKM'S NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27
+### SVKM's NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27
 
 Welcome to the official administration portal! This guide explains how student coordinators and sports desk volunteers manage fixtures, enter results, award Man of the Match honours, enter stats, and update the website.
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Trophy, RefreshCw, Save, CheckCircle2, Sliders } from "lucide-react";
+import { RefreshCw, CheckCircle2, Sliders } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { SPORTS_CONFIG } from "@/config/tournament";
 

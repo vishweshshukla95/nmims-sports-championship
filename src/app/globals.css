@@ -190,3 +190,92 @@ body {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
 }
+
+/* Gold shimmer sweep every 6s */
+@keyframes shimmerSweep {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-gold-shimmer {
+  background: linear-gradient(
+    90deg,
+    #F0D38F 0%,
+    #D9B26F 25%,
+    #FFF3D1 50%,
+    #D9B26F 75%,
+    #A88345 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmerSweep 6s ease-in-out infinite;
+}
+
+@keyframes titleFadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+    letter-spacing: 0.05em;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    letter-spacing: 0.02em;
+  }
+}
+
+@keyframes dividerDraw {
+  0% {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+@keyframes dateFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-title-fade-up {
+  animation: titleFadeUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-divider-draw {
+  animation: dividerDraw 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+}
+
+.animate-date-fade-in {
+  animation: dateFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.6s forwards;
+}
+
+@keyframes kenburns {
+  0% {
+    transform: scale(1.08) translate(0, 0);
+  }
+  50% {
+    transform: scale(1.15) translate(-0.8%, -0.8%);
+  }
+  100% {
+    transform: scale(1.08) translate(0, 0);
+  }
+}
+
+.animate-ken-burns {
+  animation: kenburns 30s ease-in-out infinite alternate;
+  will-change: transform;
+}

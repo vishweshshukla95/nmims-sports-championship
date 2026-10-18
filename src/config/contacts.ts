@@ -1,38 +1,44 @@
 export interface ContactPerson {
   name: string;
   role: string;
-  phone: string;
-  cleanPhone: string;
-  group: "director" | "committee";
+  phone?: string | null;
+  cleanPhone?: string | null;
+  group: "leadership" | "committee";
 }
 
-export const CONTACTS_CONFIG: ContactPerson[] = [
+export const LEADERSHIP_CONFIG: ContactPerson = {
+  name: "Dr. Kiran Anchan",
+  role: "Director – Sports, SVKM's & NMIMS University",
+  phone: null,
+  cleanPhone: null,
+  group: "leadership",
+};
+
+export const COMMITTEE_CONFIG: ContactPerson[] = [
   {
     name: "Tushar Jain",
-    role: "Sports Director, MPTP Shirpur Campus",
+    role: "Sports Incharge, MPTP Shirpur Campus",
     phone: "+91 95886 75238",
     cleanPhone: "919588675238",
-    group: "director",
+    group: "committee",
   },
   {
     name: "Aryan Pawar",
-    role: "Organising Committee",
+    role: "Sports Council Member, MPTP Shirpur Campus",
     phone: "+91 91569 88019",
     cleanPhone: "919156988019",
     group: "committee",
   },
   {
     name: "Mehi Manswa",
-    role: "Organising Committee",
+    role: "Sports Council Member, MPTP Shirpur Campus",
     phone: "+91 93249 79109",
     cleanPhone: "919324979109",
     group: "committee",
   },
-  {
-    name: "Vishwesh Shukla",
-    role: "Organising Committee",
-    phone: "+91 95993 33064",
-    cleanPhone: "919599333064",
-    group: "committee",
-  },
+];
+
+export const CONTACTS_CONFIG: ContactPerson[] = [
+  LEADERSHIP_CONFIG,
+  ...COMMITTEE_CONFIG,
 ];

@@ -3,231 +3,459 @@
 import React, { useState, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
-  Calendar,
   Plus,
   Copy,
   Upload,
-  FileSpreadsheet,
-  Award,
   Trash2,
   Edit,
-  Save,
   CheckCircle2,
   X,
   Search,
-  Filter,
+  AlertCircle,
 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import {
   SPORTS_CONFIG,
-  CAMPUSES_CONFIG,
   TOURNAMENT_DAYS,
-  TOURNAMENT_CONFIG,
 } from "@/config/tournament";
 import {
-  getMatches,
+  fetchMatches,
   saveMatch,
   deleteMatch,
-  getSeededTeams,
+  fetchTeams,
 } from "@/lib/tournament-store";
+import { fetchTeamGroups } from "@/lib/groups-store";
+import { bulkImportMatchesAction } from "@/app/actions/tournament";
+import { getGroupsAction } from "@/app/actions/groups";
 import {
   Match,
+  Team,
+  TeamGroup,
+  Group,
   SportType,
   CategoryGender,
   MatchRound,
   MatchStatus,
 } from "@/types/tournament";
 
+export const dynamic = "force-dynamic";
+
 function MatchesAdminContent() {
   const searchParams = useSearchParams();
   const initialAction = searchParams.get("action");
 
-  const [matches, setMatches] = useState<Match[]>(() => getMatches());
-  const seededTeams = useMemo(() => getSeededTeams(), []);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [groups, setGroups] = useState<TeamGroup[]>([]);
+  const [allGroupsList, setAllGroupsList] = useState<Group[]>([]);
+
+  React.useEffect(() => {
+    async function load() {
+      const [m, t, g, grps] = await Promise.all([
+        fetchMatches(),
+        fetchTeams(),
+        fetchTeamGroups(),
+        getGroupsAction(),
+      ]);
+      setMatches(m);
+      setTeams(t);
+      setGroups(g);
+      setAllGroupsList(grps);
+    }
+    load();
+  }, []);
 
   // Filter state
   const [filterSport, setFilterSport] = useState<string>("all");
   const [filterCategory, setFilterCategory] = useState<string>("all");
-  const [filterDay, setFilterDay] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Toast
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   // Editor Modal State
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(initialAction === "new");
-  const [activeEditorTab, setActiveEditorTab] = useState<
-    "details" | "result" | "stats" | "motm"
-  >("details");
 
-  // Form fields
+  // Form fields strictly per Part 1C & Part 2
   const [formSport, setFormSport] = useState<SportType>("cricket");
   const [formCategory, setFormCategory] = useState<CategoryGender>("men");
-  const [formRound, setFormRound] = useState<MatchRound>("League");
+  const [formRound, setFormRound] = useState<MatchRound>("Group Stage");
+  const [formGroupId, setFormGroupId] = useState<string>("");
   const [formMatchNo, setFormMatchNo] = useState(1);
-  const [formTeamA, setFormTeamA] = useState("mum");
-  const [formTeamB, setFormTeamB] = useState("shi");
-  const [formPlayerA, setFormPlayerA] = useState("");
-  const [formPlayerB, setFormPlayerB] = useState("");
+  const [formTeamAId, setFormTeamAId] = useState<string>("");
+  const [formTeamBId, setFormTeamBId] = useState<string>("");
   const [formDate, setFormDate] = useState("2026-10-27");
   const [formTime, setFormTime] = useState("09:30");
-  const [formVenue, setFormVenue] = useState("Main Ground");
+  const [formVenue, setFormVenue] = useState("Main Cricket Ground");
   const [formStatus, setFormStatus] = useState<MatchStatus>("Scheduled");
   const [formNotes, setFormNotes] = useState("");
 
-  // Result fields
-  const [resultScoreA, setResultScoreA] = useState("");
-  const [resultScoreB, setResultScoreB] = useState("");
-  const [resultWinner, setResultWinner] = useState("");
-  const [resultText, setResultText] = useState("");
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3500);
+  };
 
-  // MOTM fields
-  const [motmPlayerName, setMotmPlayerName] = useState("");
-  const [motmCampus, setMotmCampus] = useState("MUM");
-  const [motmNote, setMotmNote] = useState("");
+  // Valid teams for current sport & category
+  const sportCategoryTeams = useMemo(() => {
+    return teams.filter(
+      (t) => t.sportId === formSport && t.category === formCategory
+    );
+  }, [teams, formSport, formCategory]);
 
-  // Filtered matches
-  const filteredMatches = useMemo(() => {
-    return matches.filter((m) => {
-      if (filterSport !== "all" && m.sportId !== filterSport) return false;
-      if (filterCategory !== "all" && m.category !== filterCategory) return false;
-      if (filterStatus !== "all" && m.status !== filterStatus) return false;
-      if (filterDay !== "all" && !m.scheduledAt.startsWith(filterDay)) return false;
-      if (
-        searchQuery &&
-        !m.teamAName.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !m.teamBName.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-        return false;
-      return true;
-    });
-  }, [matches, filterSport, filterCategory, filterStatus, filterDay, searchQuery]);
+  // Groups for current sport
+  const categoryGroups = useMemo(() => {
+    return allGroupsList.filter((g) => g.sportId === formSport);
+  }, [allGroupsList, formSport]);
 
+  // Teams filtered by group when round is Group Stage, Group A or Group B
+  const eligibleTeams = useMemo(() => {
+    if (formRound === "Group Stage") {
+      if (formGroupId) {
+        const assignedIds = new Set(
+          groups
+            .filter((tg) => tg.groupId === formGroupId)
+            .map((tg) => tg.teamId)
+        );
+        const filtered = sportCategoryTeams.filter((t) => assignedIds.has(t.id));
+        return filtered.length > 0 ? filtered : sportCategoryTeams;
+      }
+      return sportCategoryTeams;
+    }
+    if (formRound === "Group A" || formRound === "Group B") {
+      const targetGroup = formRound === "Group A" ? "A" : "B";
+      const assignedIds = new Set(
+        groups
+          .filter(
+            (g) =>
+              g.sportId === formSport &&
+              (g.groupName === targetGroup ||
+                g.groupName?.toLowerCase() === `group ${targetGroup}`.toLowerCase())
+          )
+          .map((g) => g.teamId)
+      );
+
+      const filtered = sportCategoryTeams.filter((t) => assignedIds.has(t.id));
+      return filtered.length > 0 ? filtered : sportCategoryTeams;
+    }
+    return sportCategoryTeams;
+  }, [sportCategoryTeams, formRound, formGroupId, groups, formSport]);
+
+  const effectiveTeamAId = useMemo(() => {
+    if (formTeamAId && eligibleTeams.some((t) => t.id === formTeamAId)) {
+      return formTeamAId;
+    }
+    return eligibleTeams[0]?.id || "";
+  }, [eligibleTeams, formTeamAId]);
+
+  const effectiveTeamBId = useMemo(() => {
+    if (formTeamBId && formTeamBId !== effectiveTeamAId && eligibleTeams.some((t) => t.id === formTeamBId)) {
+      return formTeamBId;
+    }
+    return eligibleTeams.find((t) => t.id !== effectiveTeamAId)?.id || eligibleTeams[1]?.id || "";
+  }, [eligibleTeams, formTeamBId, effectiveTeamAId]);
+
+  // Open New Match with auto-numbered matchNo
   const openNewMatch = () => {
     setEditingMatch(null);
+    const maxNo = matches.reduce((max, m) => Math.max(max, m.matchNo || 0), 0);
+    setFormMatchNo(maxNo + 1);
     setFormSport("cricket");
     setFormCategory("men");
-    setFormRound("League");
-    setFormMatchNo(matches.length + 1);
-    setFormTeamA("mum");
-    setFormTeamB("shi");
-    setFormPlayerA("");
-    setFormPlayerB("");
+    setFormRound("Group Stage");
+    const cricketGroups = allGroupsList.filter((g) => g.sportId === "cricket");
+    setFormGroupId(cricketGroups[0]?.id || "");
+    setFormTeamAId("");
+    setFormTeamBId("");
     setFormDate("2026-10-27");
     setFormTime("09:30");
-    setFormVenue("Central Sports Arena");
+    setFormVenue("Main Cricket Ground");
     setFormStatus("Scheduled");
     setFormNotes("");
-    setResultScoreA("");
-    setResultScoreB("");
-    setResultWinner("");
-    setResultText("");
-    setMotmPlayerName("");
-    setMotmCampus("MUM");
-    setMotmNote("");
-    setActiveEditorTab("details");
     setIsEditorOpen(true);
   };
 
+  // Open Edit Match
   const openEditMatch = (m: Match) => {
     setEditingMatch(m);
+    setFormMatchNo(m.matchNo);
     setFormSport(m.sportId);
     setFormCategory(m.category);
-    setFormRound(m.round);
-    setFormMatchNo(m.matchNo);
-    setFormTeamA(m.teamAShortCode.toLowerCase());
-    setFormTeamB(m.teamBShortCode.toLowerCase());
-    setFormPlayerA(m.playerAName || "");
-    setFormPlayerB(m.playerBName || "");
-    const dateObj = new Date(m.scheduledAt);
-    setFormDate(m.scheduledAt.slice(0, 10));
-    setFormTime(
-      dateObj.toLocaleTimeString("en-IN", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      })
-    );
+    setFormRound(m.round as MatchRound);
+    setFormGroupId(m.groupId || "");
+    setFormTeamAId(m.teamAId);
+    setFormTeamBId(m.teamBId);
+    const [d, t] = m.scheduledAt ? m.scheduledAt.split("T") : ["2026-10-27", "09:30"];
+    setFormDate(d);
+    setFormTime(t ? t.slice(0, 5) : "09:30");
     setFormVenue(m.venue);
     setFormStatus(m.status);
     setFormNotes(m.notes || "");
-    setResultText(m.resultText || "");
-    setResultWinner(m.winnerId || "");
-    setMotmPlayerName(m.motmPlayerName || "");
-    setMotmCampus(m.motmCampusCode || "MUM");
-    setMotmNote(m.motmNote || "");
-    setActiveEditorTab("details");
     setIsEditorOpen(true);
   };
 
-  const handleSave = () => {
-    const campusA = CAMPUSES_CONFIG.find(
-      (c) => c.shortCode.toLowerCase() === formTeamA.toLowerCase() || c.id === formTeamA
-    ) || CAMPUSES_CONFIG[0];
+  // Duplicate Match
+  const handleDuplicate = async (m: Match) => {
+    const maxNo = matches.reduce((max, cur) => Math.max(max, cur.matchNo || 0), 0);
+    const dup: Match = {
+      ...m,
+      id: "",
+      matchNo: maxNo + 1,
+      status: "Scheduled",
+      scoreText: undefined,
+      scoreDetails: undefined,
+      winnerId: undefined,
+      winnerName: undefined,
+      motmPlayerId: undefined,
+      motmPlayerName: undefined,
+      motmCampus: undefined,
+      motmNote: undefined,
+      playerStats: [],
+    };
+    try {
+      const res = await saveMatch(dup);
+      if (res?.error) {
+        console.error("Duplicate match error:", res.error);
+        showToast(res.error, "error");
+        return;
+      }
+      const updated = await fetchMatches();
+      setMatches(updated);
+      showToast(`Duplicated Match #${m.matchNo} as #${dup.matchNo}`);
+    } catch (err: unknown) {
+      console.error("handleDuplicate exception:", err);
+      showToast(err instanceof Error ? err.message : "Failed to duplicate match", "error");
+    }
+  };
 
-    const campusB = CAMPUSES_CONFIG.find(
-      (c) => c.shortCode.toLowerCase() === formTeamB.toLowerCase() || c.id === formTeamB
-    ) || CAMPUSES_CONFIG[1];
+  // Save Match Form
+  const handleSaveForm = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-    const newMatch: Match = {
-      id: editingMatch?.id || `match-${Date.now()}`,
+    const actualTeamAId = effectiveTeamAId;
+    const actualTeamBId = effectiveTeamBId;
+
+    if (!actualTeamAId || !actualTeamBId) {
+      showToast("Please select two teams", "error");
+      return;
+    }
+
+    if (actualTeamAId === actualTeamBId) {
+      showToast("Team A and Team B cannot be the same squad", "error");
+      return;
+    }
+
+    const teamA = teams.find((t) => t.id === actualTeamAId);
+    const teamB = teams.find((t) => t.id === actualTeamBId);
+
+    const matchData: Match = {
+      id: editingMatch?.id || "",
       edition: "2026-27",
       sportId: formSport,
       category: formCategory,
       matchNo: Number(formMatchNo),
       round: formRound,
-      teamAId: `${campusA.shortCode.toLowerCase()}-${formSport}-${formCategory}`,
-      teamAName: `${campusA.name}`,
-      teamAShortCode: campusA.shortCode,
-      teamBId: `${campusB.shortCode.toLowerCase()}-${formSport}-${formCategory}`,
-      teamBName: `${campusB.name}`,
-      teamBShortCode: campusB.shortCode,
-      playerAName: formPlayerA || undefined,
-      playerBName: formPlayerB || undefined,
-      scheduledAt: `${formDate}T${formTime}:00+05:30`,
+      groupId: formRound === "Group Stage" && formGroupId ? formGroupId : undefined,
+      teamAId: actualTeamAId,
+      teamBId: actualTeamBId,
+      teamAName: teamA?.name || "Team A",
+      teamBName: teamB?.name || "Team B",
+      teamAShortCode: teamA?.campusId.toUpperCase() || "MUM",
+      teamBShortCode: teamB?.campusId.toUpperCase() || "SHI",
       venue: formVenue,
+      scheduledAt: `${formDate}T${formTime}:00+05:30`,
       status: formStatus,
-      winnerId: resultWinner || undefined,
-      resultText: resultText || undefined,
-      notes: formNotes || undefined,
-      motmPlayerName: motmPlayerName || undefined,
-      motmCampusCode: motmCampus || undefined,
-      motmNote: motmNote || undefined,
+      notes: formNotes,
+      scoreText: editingMatch?.scoreText,
+      scoreDetails: editingMatch?.scoreDetails,
+      winnerId: editingMatch?.winnerId,
+      winnerName: editingMatch?.winnerName,
+      motmPlayerId: editingMatch?.motmPlayerId,
+      motmPlayerName: editingMatch?.motmPlayerName,
+      motmCampus: editingMatch?.motmCampus,
+      motmNote: editingMatch?.motmNote,
+      playerStats: editingMatch?.playerStats || [],
     };
 
-    saveMatch(newMatch);
-    setMatches(getMatches());
-    setIsEditorOpen(false);
-  };
-
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this fixture?")) {
-      deleteMatch(id);
-      setMatches(getMatches());
+    try {
+      const res = await saveMatch(matchData);
+      if (res?.error) {
+        console.error("saveMatch error:", res.error);
+        showToast(res.error, "error");
+        return;
+      }
+      const updated = await fetchMatches();
+      setMatches(updated);
+      setIsEditorOpen(false);
+      showToast(`Fixture #${matchData.matchNo} saved successfully!`);
+    } catch (err: unknown) {
+      console.error("handleSaveForm exception:", err);
+      showToast(err instanceof Error ? err.message : "Failed to save match", "error");
     }
   };
+
+  // Delete Match
+  const handleDelete = async (id: string, matchNo: number) => {
+    if (confirm(`Are you sure you want to delete fixture #${matchNo}?`)) {
+      try {
+        const res = await deleteMatch(id);
+        if (res?.error) {
+          console.error("deleteMatch error:", res.error);
+          showToast(res.error, "error");
+          return;
+        }
+        const updated = await fetchMatches();
+        setMatches(updated);
+        showToast(`Deleted fixture #${matchNo}`);
+      } catch (err: unknown) {
+        console.error("handleDelete exception:", err);
+        showToast(err instanceof Error ? err.message : "Failed to delete fixture", "error");
+      }
+    }
+  };
+
+  // CSV Bulk Import
+  const handleBulkImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const text = event.target?.result as string;
+      if (!text) return;
+
+      const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+      if (lines.length <= 1) {
+        showToast("CSV file is empty", "error");
+        return;
+      }
+
+      // Expected format: sport,category,round,matchNo,teamAShortCode,teamBShortCode,date,time,venue
+      const matchesToImport: Partial<Match>[] = [];
+      for (let i = 1; i < lines.length; i++) {
+        const [sport, category, round, matchNo, teamACode, teamBCode, date, time, venue] = lines[i]
+          .split(",")
+          .map((s) => s.trim());
+
+        if (sport && teamACode && teamBCode) {
+          const tA = teams.find(
+            (t) =>
+              t.sportId === sport &&
+              t.category === category &&
+              t.campusId.toLowerCase() === teamACode.toLowerCase()
+          );
+          const tB = teams.find(
+            (t) =>
+              t.sportId === sport &&
+              t.category === category &&
+              t.campusId.toLowerCase() === teamBCode.toLowerCase()
+          );
+
+          if (tA && tB) {
+            matchesToImport.push({
+              edition: "2026-27",
+              sportId: sport as SportType,
+              category: (category as CategoryGender) || "men",
+              matchNo: Number(matchNo) || i,
+              round: (round as MatchRound) || "Group A",
+              teamAId: tA.id,
+              teamBId: tB.id,
+              teamAName: tA.name,
+              teamBName: tB.name,
+              teamAShortCode: tA.campusId.toUpperCase(),
+              teamBShortCode: tB.campusId.toUpperCase(),
+              scheduledAt: `${date || "2026-10-27"}T${time || "10:00"}:00+05:30`,
+              venue: venue || "Main Ground",
+              status: "Scheduled",
+              playerStats: [],
+            });
+          }
+        }
+      }
+
+      if (matchesToImport.length > 0) {
+        try {
+          await bulkImportMatchesAction(matchesToImport);
+          const updated = await fetchMatches();
+          setMatches(updated);
+          showToast(`Bulk imported ${matchesToImport.length} fixtures from CSV!`);
+        } catch (err: unknown) {
+          showToast(err instanceof Error ? err.message : "Failed to import fixtures", "error");
+        }
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
+  const filteredMatches = useMemo(() => {
+    return matches.filter((m) => {
+      if (filterSport !== "all" && m.sportId !== filterSport) return false;
+      if (filterCategory !== "all" && m.category !== filterCategory) return false;
+      if (filterStatus !== "all" && m.status !== filterStatus) return false;
+      if (
+        searchQuery &&
+        !m.teamAName.toLowerCase().includes(searchQuery.toLowerCase()) &&
+        !m.teamBName.toLowerCase().includes(searchQuery.toLowerCase())
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [matches, filterSport, filterCategory, filterStatus, searchQuery]);
 
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Header Bar */}
+        {/* Toast */}
+        {toast && (
+          <div
+            className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-2xl border flex items-center gap-2 text-xs font-bold animate-fadeIn ${
+              toast.type === "success"
+                ? "bg-emerald-950 border-emerald-500 text-emerald-200"
+                : "bg-red-950 border-red-500 text-red-200"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-red-400" />
+            )}
+            <span>{toast.message}</span>
+          </div>
+        )}
+
+        {/* Top Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-[rgba(217,178,111,0.2)]">
           <div>
             <span className="text-xs font-mono font-bold uppercase tracking-wider text-gold">
-              Fixtures & Outcomes
+              Fixtures & Scheduling
             </span>
             <h1 className="text-2xl sm:text-3xl font-serif font-black uppercase text-gold-light mt-1">
-              Schedule & Results Manager
+              Schedule Matches
             </h1>
             <p className="text-xs text-[#AEB3D6] mt-0.5">
-              Add matches, enter completed scorecards, assign Man of the Match awards, and manage schedules.
+              Add new fixtures with group-filtered teams, duplicate existing matches, or bulk import schedules via CSV.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <label className="px-4 py-2.5 rounded-full btn-royal text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer">
+              <Upload className="w-4 h-4 text-gold" />
+              <span>Bulk CSV</span>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleBulkImport}
+                className="hidden"
+              />
+            </label>
+
             <button
               type="button"
               onClick={openNewMatch}
-              className="px-5 py-2.5 rounded-full btn-gold text-xs font-bold uppercase tracking-wider flex items-center gap-2 min-h-[44px]"
+              className="px-5 py-2.5 rounded-full btn-gold text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-gold-glow"
             >
               <Plus className="w-4 h-4" />
               <span>Add Match</span>
@@ -238,7 +466,6 @@ function MatchesAdminContent() {
         {/* Filter Toolbar */}
         <div className="p-4 rounded-2xl bg-[#161A40] border border-[rgba(217,178,111,0.2)] flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3 flex-1">
-            {/* Search */}
             <div className="relative min-w-[200px]">
               <Search className="w-4 h-4 text-gold absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -246,15 +473,14 @@ function MatchesAdminContent() {
                 placeholder="Search campus team..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3] focus:outline-none focus:border-gold"
+                className="w-full pl-9 pr-3 py-2 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3] focus:outline-none"
               />
             </div>
 
-            {/* Sport Filter */}
             <select
               value={filterSport}
               onChange={(e) => setFilterSport(e.target.value)}
-              className="px-3 py-2 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-gold font-semibold"
+              className="px-3 py-2 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-gold font-semibold focus:outline-none"
             >
               <option value="all">All Sports</option>
               {SPORTS_CONFIG.map((s) => (
@@ -264,25 +490,35 @@ function MatchesAdminContent() {
               ))}
             </select>
 
-            {/* Status Filter */}
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="px-3 py-2 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-gold font-semibold focus:outline-none"
+            >
+              <option value="all">All Categories</option>
+              <option value="men">Men</option>
+              <option value="women">Women</option>
+            </select>
+
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-gold font-semibold"
+              className="px-3 py-2 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-gold font-semibold focus:outline-none"
             >
               <option value="all">All Statuses</option>
               <option value="Scheduled">Scheduled</option>
               <option value="Postponed">Postponed</option>
+              <option value="Cancelled">Cancelled</option>
               <option value="Completed">Completed</option>
             </select>
           </div>
 
           <span className="text-xs text-gold/80 font-mono">
-            {filteredMatches.length} Matches Found
+            {filteredMatches.length} Fixtures Found
           </span>
         </div>
 
-        {/* Match Table */}
+        {/* Matches Table */}
         <div className="overflow-x-auto rounded-2xl border border-[rgba(217,178,111,0.2)] bg-[#161A40]">
           <table className="w-full text-left text-xs">
             <thead className="bg-[#20255A] text-gold uppercase tracking-wider font-semibold">
@@ -300,7 +536,7 @@ function MatchesAdminContent() {
               {filteredMatches.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="p-8 text-center text-[#AEB3D6] italic">
-                    No fixtures found. Click &quot;Add Match&quot; to schedule the first match.
+                    No fixtures found matching filters. Click &quot;Add Match&quot; to schedule a fixture.
                   </td>
                 </tr>
               ) : (
@@ -315,7 +551,7 @@ function MatchesAdminContent() {
                         {m.category}
                       </span>
                     </td>
-                    <td className="p-4 text-gold-light">{m.round}</td>
+                    <td className="p-4 text-gold-light font-medium">{m.round}</td>
                     <td className="p-4 font-semibold text-[#F4EFE3]">
                       {m.teamAShortCode} vs {m.teamBShortCode}
                     </td>
@@ -324,9 +560,9 @@ function MatchesAdminContent() {
                         {new Date(m.scheduledAt).toLocaleDateString("en-IN", {
                           day: "numeric",
                           month: "short",
-                        })}
+                        })} · {new Date(m.scheduledAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
                       </span>
-                      <span className="text-[11px] truncate max-w-[120px] block">
+                      <span className="text-[11px] truncate max-w-[140px] block text-gold/80">
                         {m.venue}
                       </span>
                     </td>
@@ -337,28 +573,38 @@ function MatchesAdminContent() {
                             ? "bg-success/20 text-success border border-success/40"
                             : m.status === "Postponed"
                             ? "bg-warning/20 text-warning border border-warning/40"
+                            : m.status === "Cancelled"
+                            ? "bg-red-950 text-red-400 border border-red-500/30"
                             : "bg-[#20255A] text-gold border border-gold/30"
                         }`}
                       >
                         {m.status}
                       </span>
                     </td>
-                    <td className="p-4 text-right space-x-2">
+                    <td className="p-4 text-right space-x-1.5 whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => handleDuplicate(m)}
+                        className="p-1.5 rounded-lg bg-[#20255A] text-gold hover:bg-gold hover:text-indigo-black transition-colors"
+                        title="Duplicate Match"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
                       <button
                         type="button"
                         onClick={() => openEditMatch(m)}
                         className="p-1.5 rounded-lg bg-[#20255A] text-gold hover:bg-gold hover:text-indigo-black transition-colors"
-                        title="Edit Match & Result"
+                        title="Edit Match"
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-3.5 h-3.5" />
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleDelete(m.id)}
-                        className="p-1.5 rounded-lg bg-[#20255A] text-red-400 hover:bg-red-900 transition-colors"
+                        onClick={() => handleDelete(m.id, m.matchNo)}
+                        className="p-1.5 rounded-lg bg-[#20255A] text-red-400 hover:bg-red-950 transition-colors"
                         title="Delete Match"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </td>
                   </tr>
@@ -368,13 +614,13 @@ function MatchesAdminContent() {
           </table>
         </div>
 
-        {/* ADD / EDIT MATCH MODAL with 4 TABS: Details · Result · Stats · MOTM */}
+        {/* ADD / EDIT MATCH MODAL strictly per Part 1C */}
         {isEditorOpen && (
           <div className="fixed inset-0 z-50 bg-[#0F122E]/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-            <div className="w-full max-w-3xl bg-[#161A40] border-2 border-gold/40 rounded-3xl p-6 sm:p-8 shadow-2xl relative my-8">
-              <div className="flex items-center justify-between pb-4 border-b border-[rgba(217,178,111,0.2)]">
+            <div className="w-full max-w-2xl bg-[#161A40] border-2 border-gold/40 rounded-3xl p-6 sm:p-8 shadow-2xl relative my-8">
+              <div className="flex items-center justify-between pb-4 border-b border-[rgba(217,178,111,0.2)] mb-4">
                 <h3 className="text-xl font-serif font-black uppercase text-gold">
-                  {editingMatch ? `Edit Match #${editingMatch.matchNo}` : "Add New Fixture"}
+                  {editingMatch ? `Edit Match #${editingMatch.matchNo}` : "Schedule New Fixture"}
                 </h3>
                 <button
                   type="button"
@@ -385,280 +631,28 @@ function MatchesAdminContent() {
                 </button>
               </div>
 
-              {/* 4 Tabs Inside Editor */}
-              <div className="flex items-center gap-2 my-4 border-b border-[rgba(217,178,111,0.15)] pb-2 overflow-x-auto">
-                {(
-                  [
-                    { id: "details", label: "Details" },
-                    { id: "result", label: "Result" },
-                    { id: "stats", label: "Player Stats" },
-                    { id: "motm", label: "Man of the Match" },
-                  ] as const
-                ).map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setActiveEditorTab(tab.id)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                      activeEditorTab === tab.id
-                        ? "bg-gold text-indigo-black shadow-md"
-                        : "bg-[#0F122E] text-[#AEB3D6]"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* TAB 1: DETAILS */}
-              {activeEditorTab === "details" && (
-                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
-                        Sport
-                      </label>
-                      <select
-                        value={formSport}
-                        onChange={(e) => setFormSport(e.target.value as SportType)}
-                        className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3]"
-                      >
-                        {SPORTS_CONFIG.map((s) => (
-                          <option key={s.slug} value={s.slug}>
-                            {s.icon} {s.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
-                        Category
-                      </label>
-                      <select
-                        value={formCategory}
-                        onChange={(e) =>
-                          setFormCategory(e.target.value as CategoryGender)
+              <form onSubmit={handleSaveForm} className="space-y-4">
+                {/* 1. Sport then Category (only valid ones) */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
+                      Sport
+                    </label>
+                    <select
+                      value={formSport}
+                      onChange={(e) => {
+                        const nextSport = e.target.value as SportType;
+                        setFormSport(nextSport);
+                        const sp = SPORTS_CONFIG.find((s) => s.slug === nextSport);
+                        if (!sp?.hasWomen && formCategory === "women") {
+                          setFormCategory("men");
                         }
-                        className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3]"
-                      >
-                        <option value="men">Men</option>
-                        {SPORTS_CONFIG.find((s) => s.slug === formSport)?.hasWomen && (
-                          <option value="women">Women</option>
-                        )}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
-                        Match Number
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={formMatchNo}
-                        onChange={(e) => setFormMatchNo(Number(e.target.value))}
-                        className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
-                        Tournament Round
-                      </label>
-                      <select
-                        value={formRound}
-                        onChange={(e) => setFormRound(e.target.value as MatchRound)}
-                        className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3]"
-                      >
-                        <option value="League">League</option>
-                        <option value="Group Stage">Group Stage</option>
-                        <option value="Quarter-Final">Quarter-Final</option>
-                        <option value="Semi-Final">Semi-Final</option>
-                        <option value="3rd Place">3rd Place</option>
-                        <option value="Final">Final</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
-                        Team A (Campus)
-                      </label>
-                      <select
-                        value={formTeamA}
-                        onChange={(e) => setFormTeamA(e.target.value)}
-                        className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3]"
-                      >
-                        {CAMPUSES_CONFIG.map((c) => (
-                          <option key={c.shortCode} value={c.shortCode.toLowerCase()}>
-                            {c.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
-                        Team B (Campus)
-                      </label>
-                      <select
-                        value={formTeamB}
-                        onChange={(e) => setFormTeamB(e.target.value)}
-                        className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3]"
-                      >
-                        {CAMPUSES_CONFIG.map((c) => (
-                          <option key={c.shortCode} value={c.shortCode.toLowerCase()}>
-                            {c.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
-                        Date (27–31 Oct 2026)
-                      </label>
-                      <input
-                        type="date"
-                        min="2026-10-27"
-                        max="2026-10-31"
-                        value={formDate}
-                        onChange={(e) => setFormDate(e.target.value)}
-                        className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
-                        Time (IST)
-                      </label>
-                      <input
-                        type="time"
-                        value={formTime}
-                        onChange={(e) => setFormTime(e.target.value)}
-                        className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
-                        Venue / Court
-                      </label>
-                      <input
-                        type="text"
-                        value={formVenue}
-                        onChange={(e) => setFormVenue(e.target.value)}
-                        placeholder="Ground 1 / Court A"
-                        className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3]"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
-                      Status
-                    </label>
-                    <select
-                      value={formStatus}
-                      onChange={(e) => setFormStatus(e.target.value as MatchStatus)}
-                      className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3]"
+                      }}
+                      className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3] focus:outline-none"
                     >
-                      <option value="Scheduled">Scheduled</option>
-                      <option value="Postponed">Postponed</option>
-                      <option value="Completed">Completed</option>
-                      <option value="Walkover">Walkover</option>
-                    </select>
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 2: RESULT */}
-              {activeEditorTab === "result" && (
-                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                  <div className="p-4 rounded-xl bg-[#20255A] text-xs text-gold">
-                    Entering a result automatically marks this match as Completed.
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
-                      Official Result Headline
-                    </label>
-                    <input
-                      type="text"
-                      value={resultText}
-                      onChange={(e) => setResultText(e.target.value)}
-                      placeholder="e.g. NMIMS Mumbai won by 4 runs"
-                      className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
-                      Winning Campus / Team
-                    </label>
-                    <select
-                      value={resultWinner}
-                      onChange={(e) => setResultWinner(e.target.value)}
-                      className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3]"
-                    >
-                      <option value="">Select Winner</option>
-                      <option value={`${formTeamA}-${formSport}-${formCategory}`}>
-                        {formTeamA.toUpperCase()} (Team A)
-                      </option>
-                      <option value={`${formTeamB}-${formSport}-${formCategory}`}>
-                        {formTeamB.toUpperCase()} (Team B)
-                      </option>
-                    </select>
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 3: STATS */}
-              {activeEditorTab === "stats" && (
-                <div className="p-6 rounded-2xl bg-[#0F122E] border border-[rgba(217,178,111,0.2)] text-center space-y-2">
-                  <span className="text-xs font-mono font-bold text-gold">
-                    Spreadsheet Player Stats Grid
-                  </span>
-                  <p className="text-xs text-[#AEB3D6]">
-                    To enter ball-by-ball or player stats for this match, use the dedicated Player Stats tab from the admin navigation menu.
-                  </p>
-                </div>
-              )}
-
-              {/* TAB 4: MAN OF THE MATCH */}
-              {activeEditorTab === "motm" && (
-                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                  <div>
-                    <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
-                      Awardee Athlete Name
-                    </label>
-                    <input
-                      type="text"
-                      value={motmPlayerName}
-                      onChange={(e) => setMotmPlayerName(e.target.value)}
-                      placeholder="e.g. Rohan Sharma"
-                      className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
-                      Campus Code
-                    </label>
-                    <select
-                      value={motmCampus}
-                      onChange={(e) => setMotmCampus(e.target.value)}
-                      className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3]"
-                    >
-                      {CAMPUSES_CONFIG.map((c) => (
-                        <option key={c.shortCode} value={c.shortCode}>
-                          {c.shortCode} - {c.name}
+                      {SPORTS_CONFIG.map((s) => (
+                        <option key={s.slug} value={s.slug}>
+                          {s.icon} {s.name}
                         </option>
                       ))}
                     </select>
@@ -666,37 +660,211 @@ function MatchesAdminContent() {
 
                   <div>
                     <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
-                      Performance Summary Note
+                      Category
+                    </label>
+                    <select
+                      value={formCategory}
+                      onChange={(e) => setFormCategory(e.target.value as CategoryGender)}
+                      className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3] focus:outline-none"
+                    >
+                      <option value="men">Men</option>
+                      {SPORTS_CONFIG.find((s) => s.slug === formSport)?.hasWomen && (
+                        <option value="women">Women</option>
+                      )}
+                    </select>
+                  </div>
+                </div>
+
+                {/* 2. Round & Group & Auto-Match No */}
+                <div className={`grid ${formRound === "Group Stage" ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-2"} gap-4`}>
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
+                      Round
+                    </label>
+                    <select
+                      value={formRound}
+                      onChange={(e) => setFormRound(e.target.value as MatchRound)}
+                      className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3] focus:outline-none"
+                    >
+                      <option value="Group Stage">Group Stage</option>
+                      <option value="Group A">Group A</option>
+                      <option value="Group B">Group B</option>
+                      <option value="League">League</option>
+                      <option value="Quarter-Final">Quarter-Final</option>
+                      <option value="Semi-Final">Semi-Final</option>
+                      <option value="3rd Place">3rd Place</option>
+                      <option value="Final">Final</option>
+                    </select>
+                  </div>
+
+                  {formRound === "Group Stage" && (
+                    <div>
+                      <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
+                        Group / Pool
+                      </label>
+                      <select
+                        value={formGroupId}
+                        onChange={(e) => setFormGroupId(e.target.value)}
+                        className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-gold font-semibold focus:outline-none"
+                      >
+                        <option value="">-- All Groups --</option>
+                        {categoryGroups.map((g) => (
+                          <option key={g.id} value={g.id}>
+                            {g.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
+                      Match No. (Auto-Numbered)
                     </label>
                     <input
-                      type="text"
-                      value={motmNote}
-                      onChange={(e) => setMotmNote(e.target.value)}
-                      placeholder="e.g. 52 (31) & 2/18"
-                      className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3]"
+                      type="number"
+                      min="1"
+                      required
+                      value={formMatchNo}
+                      onChange={(e) => setFormMatchNo(Number(e.target.value))}
+                      className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3] focus:outline-none"
                     />
                   </div>
                 </div>
-              )}
 
-              {/* Footer Save */}
-              <div className="pt-6 mt-6 border-t border-[rgba(217,178,111,0.2)] flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsEditorOpen(false)}
-                  className="px-5 py-2.5 rounded-full text-xs font-bold text-[#AEB3D6] hover:bg-[#20255A]"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  className="px-6 py-2.5 rounded-full btn-gold text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-md"
-                >
-                  <Save className="w-4 h-4" />
-                  <span>Save Fixture</span>
-                </button>
-              </div>
+                {/* 3. Team A and Team B (Filtered by group when round is Group A or Group B) */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
+                      Team A {formRound.startsWith("Group") ? `(${formRound})` : ""}
+                    </label>
+                    <select
+                      value={effectiveTeamAId}
+                      onChange={(e) => setFormTeamAId(e.target.value)}
+                      className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3] focus:outline-none"
+                    >
+                      {eligibleTeams.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
+                      Team B {formRound.startsWith("Group") ? `(${formRound})` : ""}
+                    </label>
+                    <select
+                      value={effectiveTeamBId}
+                      onChange={(e) => setFormTeamBId(e.target.value)}
+                      className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3] focus:outline-none"
+                    >
+                      {eligibleTeams.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* 4. Date (27–31 Oct 2026), Time, Venue/Court */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
+                      Date (27–31 Oct)
+                    </label>
+                    <select
+                      value={formDate}
+                      onChange={(e) => setFormDate(e.target.value)}
+                      className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3] focus:outline-none"
+                    >
+                      {TOURNAMENT_DAYS.map((d) => (
+                        <option key={d.date} value={d.date}>
+                          {d.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
+                      Time (IST)
+                    </label>
+                    <input
+                      type="time"
+                      required
+                      value={formTime}
+                      onChange={(e) => setFormTime(e.target.value)}
+                      className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3] focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
+                      Venue / Court
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formVenue}
+                      onChange={(e) => setFormVenue(e.target.value)}
+                      placeholder="e.g. Court 1 / Main Ground"
+                      className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3] focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* 5. Status & Notes */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
+                      Status
+                    </label>
+                    <select
+                      value={formStatus}
+                      onChange={(e) => setFormStatus(e.target.value as MatchStatus)}
+                      className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3] focus:outline-none"
+                    >
+                      <option value="Scheduled">Scheduled</option>
+                      <option value="Postponed">Postponed</option>
+                      <option value="Cancelled">Cancelled</option>
+                      <option value="Completed">Completed</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#AEB3D6] uppercase mb-1">
+                      Match Notes
+                    </label>
+                    <input
+                      type="text"
+                      value={formNotes}
+                      onChange={(e) => setFormNotes(e.target.value)}
+                      placeholder="e.g. Floodlit evening session"
+                      className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-[#F4EFE3] focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="pt-4 flex gap-3 border-t border-[rgba(217,178,111,0.15)]">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditorOpen(false)}
+                    className="flex-1 py-2.5 rounded-full btn-royal text-xs font-bold uppercase"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 rounded-full btn-gold text-xs font-bold uppercase shadow-gold-glow"
+                  >
+                    Save Fixture
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
@@ -709,8 +877,8 @@ export default function AdminMatchesPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-navy flex items-center justify-center text-gold font-serif text-lg">
-          Loading Schedule Manager...
+        <div className="min-h-screen bg-navy flex items-center justify-center text-gold font-serif">
+          Loading Fixtures...
         </div>
       }
     >

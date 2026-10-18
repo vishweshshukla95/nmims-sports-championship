@@ -1,7 +1,6 @@
 "use client";
 
-import React from "react";
-import { Archive, Plus, Clock, Trophy } from "lucide-react";
+import { Archive, Plus } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 
 export default function AdminArchivePage() {

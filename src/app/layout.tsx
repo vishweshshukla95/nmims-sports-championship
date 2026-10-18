@@ -1,7 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Cinzel, Oswald, Inter } from "next/font/google";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import { TOURNAMENT_CONFIG } from "@/config/tournament";
 import "./globals.css";
 
@@ -33,7 +31,7 @@ export const metadata: Metadata = {
     template: `%s | ${TOURNAMENT_CONFIG.fullName}`,
   },
   description:
-    "Official website of SVKM'S NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27. 27–31 October 2026 at Mukesh Patel Technology Park, Shirpur. Fixtures, Results, Leaderboards, MOTM awards & Gallery.",
+    "Official website of SVKM's NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27. 27–31 October 2026 at Mukesh Patel Technology Park, Shirpur. Fixtures, Results, Leaderboards, MOTM awards & Gallery.",
   manifest: "/manifest.json",
   icons: {
     icon: "/images/nmims-logo-white.webp",
@@ -42,15 +40,15 @@ export const metadata: Metadata = {
   openGraph: {
     title: TOURNAMENT_CONFIG.fullName,
     description:
-      "Official website of SVKM'S NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27 at MPTP Shirpur.",
+      "Official website of SVKM's NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27 at MPTP Shirpur.",
     url: "https://nmimssports.com",
     siteName: TOURNAMENT_CONFIG.fullName,
     images: [
       {
-        url: "/images/gallery/highlight-02-all-campuses-group.webp",
+        url: "/images/hero-campus.webp",
         width: 1200,
         height: 630,
-        alt: "SVKM'S NMIMS Inter Campus Sports Championship 2026-27",
+        alt: "SVKM's NMIMS Inter Campus Sports Championship 2026-27",
       },
     ],
     locale: "en_IN",
@@ -59,10 +57,12 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: TOURNAMENT_CONFIG.fullName,
-    description: "Official portal for SVKM'S NMIMS Inter Campus Sports Championship 2026-27.",
-    images: ["/images/gallery/highlight-02-all-campuses-group.webp"],
+    description: "Official portal for SVKM's NMIMS Inter Campus Sports Championship 2026-27.",
+    images: ["/images/hero-campus.webp"],
   },
 };
+
+import LayoutShell from "@/components/layout/LayoutShell";
 
 export const viewport: Viewport = {
   themeColor: "#1B1F4B",
@@ -78,9 +78,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${cinzel.variable} ${oswald.variable} ${inter.variable}`}>
       <body className="bg-navy text-text-main antialiased selection:bg-gold selection:text-indigo-black flex flex-col min-h-screen">
-        <Navbar />
-        <main className="flex-grow">{children}</main>
-        <Footer />
+        <LayoutShell>{children}</LayoutShell>
       </body>
     </html>
   );

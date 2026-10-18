@@ -2,15 +2,10 @@
 
 import React, { useState, useMemo } from "react";
 import {
-  BarChart2,
   Save,
   CheckCircle2,
-  AlertTriangle,
-  Plus,
-  RefreshCw,
 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { SPORTS_CONFIG } from "@/config/tournament";
 import { getMatches } from "@/lib/tournament-store";
 
 export default function AdminStatsPage() {

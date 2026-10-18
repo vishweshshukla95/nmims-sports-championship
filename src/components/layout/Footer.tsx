@@ -1,14 +1,11 @@
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { MapPin, Phone, Trophy } from "lucide-react";
+import { MapPin, Phone, Trophy, Award } from "lucide-react";
 import { TOURNAMENT_CONFIG, SPORTS_CONFIG } from "@/config/tournament";
-import { CONTACTS_CONFIG } from "@/config/contacts";
+import { LEADERSHIP_CONFIG, COMMITTEE_CONFIG } from "@/config/contacts";
+import BrandLogos from "@/components/ui/BrandLogos";
 
 export default function Footer() {
-  const director = CONTACTS_CONFIG.find((c) => c.group === "director");
-  const committee = CONTACTS_CONFIG.filter((c) => c.group === "committee");
-
   return (
     <footer className="relative bg-[#0F122E] border-t border-[rgba(217,178,111,0.25)] text-[#F4EFE3] overflow-hidden pt-16 pb-12">
       {/* Background ambient texture */}
@@ -21,41 +18,27 @@ export default function Footer() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        {/* Top bar with dual logos */}
-        <div className="flex flex-col sm:flex-row items-center justify-between pb-10 border-b border-[rgba(217,178,111,0.15)] gap-6">
-          {/* Left: SVKM Logo */}
-          <div className="flex items-center space-x-4">
-            <div className="relative h-12 w-32 md:h-14 md:w-36 flex items-center">
-              <Image
-                src="/images/svkm-logo.webp"
-                alt="SVKM Logo"
-                width={140}
-                height={56}
-                className="object-contain h-full w-auto"
-              />
-            </div>
-            <div className="hidden sm:block h-8 w-px bg-[rgba(217,178,111,0.2)]" />
-            <span className="text-xs text-[#AEB3D6] hidden sm:block">
-              Shri Vile Parle Kelavani Mandal
-            </span>
-          </div>
-
-          {/* Right: NMIMS White Logo */}
-          <div className="flex items-center space-x-4">
-            <span className="text-xs text-[#AEB3D6] hidden sm:block text-right">
-              Deemed to be UNIVERSITY
-            </span>
-            <div className="hidden sm:block h-8 w-px bg-[rgba(217,178,111,0.2)]" />
-            <div className="relative h-12 w-36 md:h-14 md:w-44 flex items-center justify-end">
-              <Image
-                src="/images/nmims-logo-white.webp"
-                alt="NMIMS Crest"
-                width={170}
-                height={56}
-                className="object-contain h-full w-auto"
-              />
-            </div>
-          </div>
+        {/* Top bar with dual logos: BrandLogos size="md" (72x72) */}
+        <div className="pb-10 border-b border-[rgba(217,178,111,0.15)]">
+          <BrandLogos
+            size="md"
+            leftAddon={
+              <div className="hidden sm:flex items-center space-x-4">
+                <div className="h-8 w-px bg-[rgba(217,178,111,0.2)]" />
+                <span className="text-xs text-[#AEB3D6]">
+                  Shri Vile Parle Kelavani Mandal
+                </span>
+              </div>
+            }
+            rightAddon={
+              <div className="hidden sm:flex items-center space-x-4">
+                <span className="text-xs text-[#AEB3D6] text-right">
+                  Deemed to be UNIVERSITY
+                </span>
+                <div className="h-8 w-px bg-[rgba(217,178,111,0.2)]" />
+              </div>
+            }
+          />
         </div>
 
         {/* Main 4-column footer content */}
@@ -87,7 +70,7 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2.5 text-sm text-[#AEB3D6]">
               <li>
-                <Link href="/" className="hover:text-gold transition-colors">
+                <Link href="/home" className="hover:text-gold transition-colors">
                   Home Overview
                 </Link>
               </li>
@@ -102,8 +85,13 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/leaderboard" className="hover:text-gold transition-colors">
-                  Official Leaderboards & MVP
+                <Link href="/campuses" className="hover:text-gold transition-colors">
+                  Campus Contingents
+                </Link>
+              </li>
+              <li>
+                <Link href="/standings" className="hover:text-gold transition-colors">
+                  Points & Stats
                 </Link>
               </li>
               <li>
@@ -112,18 +100,13 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/previous-edition" className="hover:text-gold transition-colors">
-                  Previous Edition Archive
-                </Link>
-              </li>
-              <li>
                 <Link href="/travel" className="hover:text-gold transition-colors">
-                  Travel, Pickup & Accommodation
+                  Travel & Accommodation
                 </Link>
               </li>
               <li>
                 <Link href="/rules" className="hover:text-gold transition-colors">
-                  Rules & Eligibility Proforma
+                  Rules & Eligibility
                 </Link>
               </li>
               <li>
@@ -164,33 +147,36 @@ export default function Footer() {
               Key Contacts
             </h4>
             <div className="space-y-4 text-xs">
-              {director && (
-                <div className="p-3 rounded-lg bg-[#161A40] border border-[rgba(217,178,111,0.2)]">
-                  <div className="font-semibold text-gold">{director.name}</div>
-                  <div className="text-[#AEB3D6] text-[11px] mb-1.5">{director.role}</div>
-                  <a
-                    href={`tel:${director.phone}`}
-                    className="flex items-center gap-1.5 text-gold-light hover:underline font-mono"
-                  >
-                    <Phone className="w-3 h-3 text-gold" />
-                    {director.phone}
-                  </a>
+              {/* Leadership (Single card, no phone number, no buttons) */}
+              <div className="p-3 rounded-lg bg-[#161A40] border border-[rgba(217,178,111,0.25)]">
+                <div className="flex items-center gap-1.5 text-[10px] font-bold text-gold uppercase tracking-wider mb-1">
+                  <Award className="w-3.5 h-3.5" />
+                  <span>Leadership</span>
                 </div>
-              )}
+                <div className="font-serif font-bold text-gold text-sm">{LEADERSHIP_CONFIG.name}</div>
+                <div className="text-[#AEB3D6] text-[11px] mt-0.5">{LEADERSHIP_CONFIG.role}</div>
+              </div>
 
+              {/* Organising Committee */}
               <div className="space-y-2">
                 <div className="font-semibold text-[#AEB3D6] text-[11px] uppercase tracking-wide">
                   Organising Committee:
                 </div>
-                {committee.map((member) => (
+                {COMMITTEE_CONFIG.map((member) => (
                   <div key={member.name} className="flex items-center justify-between py-1 border-b border-[rgba(217,178,111,0.1)]">
-                    <span className="text-[#F4EFE3]">{member.name}</span>
-                    <a
-                      href={`tel:${member.phone}`}
-                      className="text-gold hover:underline font-mono text-[11px]"
-                    >
-                      {member.phone}
-                    </a>
+                    <div>
+                      <span className="text-[#F4EFE3] font-medium block">{member.name}</span>
+                      <span className="text-[#AEB3D6] text-[10px] block">{member.role}</span>
+                    </div>
+                    {member.phone && (
+                      <a
+                        href={`tel:${member.phone}`}
+                        className="text-gold hover:underline font-mono text-[11px] flex items-center gap-1 ml-2"
+                      >
+                        <Phone className="w-3 h-3 text-gold/70" />
+                        <span>{member.phone}</span>
+                      </a>
+                    )}
                   </div>
                 ))}
               </div>
@@ -198,10 +184,15 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Bottom copyright and disclaimer */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-[#AEB3D6] gap-4">
-          <p>© 2026 SVKM&apos;s NMIMS Sports Department. All rights reserved.</p>
-          <div className="flex items-center space-x-6">
+        {/* Bottom copyright, privacy notice, and navigation */}
+        <div className="pt-8 flex flex-col md:flex-row items-center justify-between text-xs text-[#AEB3D6] gap-4 text-center md:text-left">
+          <div className="space-y-1">
+            <p>© 2026 SVKM&apos;s NMIMS Sports Department. All rights reserved.</p>
+            <p className="text-[11px] text-[#AEB3D6]/70">
+              Privacy Notice: This site does not collect personal data from visitors.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-6">
             <Link href="/rules" className="hover:text-gold transition-colors">
               Eligibility Rules
             </Link>
@@ -209,7 +200,7 @@ export default function Footer() {
               Reporting: 26 Oct 12:00 Noon
             </Link>
             <Link href="/contact" className="hover:text-gold transition-colors">
-              Emergency Contacts
+              Contact Us
             </Link>
           </div>
         </div>

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { History, ArrowLeft, Shield } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 
 export default function AdminAuditPage() {

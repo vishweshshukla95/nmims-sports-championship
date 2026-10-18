@@ -9,7 +9,7 @@ interface AnnouncementTickerProps {
 
 export default function AnnouncementTicker({
   announcements = [
-    "Welcome to SVKM'S NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27 at MPTP Shirpur Campus!",
+    "Welcome to SVKM's NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27 at MPTP Shirpur Campus!",
     "Teams must report on 26th October 2026 by 12:00 Noon. Complimentary travel pick-up available from railway stations and airports.",
     "Submit signed Eligibility Proforma and college ID on arrival at the accreditation desk.",
   ],

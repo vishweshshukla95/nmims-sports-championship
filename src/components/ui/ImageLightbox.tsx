@@ -30,9 +30,13 @@ export default function ImageLightbox({
 }: ImageLightboxProps) {
   const [zoomLevel, setZoomLevel] = useState(1);
 
-  useEffect(() => {
+  const [prevIndex, setPrevIndex] = useState(currentIndex);
+  const [prevOpen, setPrevOpen] = useState(isOpen);
+  if (prevIndex !== currentIndex || prevOpen !== isOpen) {
+    setPrevIndex(currentIndex);
+    setPrevOpen(isOpen);
     setZoomLevel(1);
-  }, [currentIndex, isOpen]);
+  }
 
   useEffect(() => {
     if (!isOpen) return;
@@ -61,10 +65,10 @@ export default function ImageLightbox({
       try {
         await navigator.share({
           title: currentImage.caption || currentImage.alt,
-          text: `SVKM'S NMIMS Inter Campus Sports Championship 2026-27 - ${currentImage.caption || ""}`,
+          text: `SVKM's NMIMS Inter Campus Sports Championship 2026-27 - ${currentImage.caption || ""}`,
           url: window.location.href,
         });
-      } catch (err) {
+      } catch {
         // User cancelled share
       }
     } else {

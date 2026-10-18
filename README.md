@@ -1,6 +1,6 @@
-# SVKM'S NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27
+# SVKM's NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27
 
-Official website for the **SVKM'S NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27**, organised by the Sports Department, SVKM's NMIMS, and hosted at **Mukesh Patel Technology Park (MPTP), Shirpur Campus** from **27th – 31st October 2026**.
+Official website for the **SVKM's NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27**, organised by the Sports Department, SVKM's NMIMS, and hosted at **Mukesh Patel Technology Park (MPTP), Shirpur Campus** from **27th – 31st October 2026**.
 
 ---
 

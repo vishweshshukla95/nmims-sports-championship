@@ -3,9 +3,6 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import {
-  Sparkles,
-  Download,
-  Share2,
   ZoomIn,
   Camera,
   ExternalLink,
@@ -13,6 +10,7 @@ import {
 import NavyPatchBackground from "@/components/ui/NavyPatchBackground";
 import ImageLightbox, { LightboxImage } from "@/components/ui/ImageLightbox";
 import { TOURNAMENT_CONFIG } from "@/config/tournament";
+import { getGalleryImagesAction } from "@/app/actions/gallery";
 
 export default function GalleryPage() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -87,6 +85,26 @@ export default function GalleryPage() {
     },
   ];
 
+  const [photos, setPhotos] = useState(initialPhotos);
+
+  React.useEffect(() => {
+    getGalleryImagesAction()
+      .then((items) => {
+        if (items && items.length > 0) {
+          setPhotos(
+            items.map((item) => ({
+              id: item.id,
+              src: item.url,
+              alt: item.caption || "Tournament Photo",
+              caption: item.caption,
+              tag: item.tag || "Ceremonies",
+            }))
+          );
+        }
+      })
+      .catch((err) => console.error("getGalleryImagesAction error:", err));
+  }, []);
+
   const tags = [
     "all",
     "Ceremonies",
@@ -102,8 +120,8 @@ export default function GalleryPage() {
 
   const filteredPhotos =
     selectedTag === "all"
-      ? initialPhotos
-      : initialPhotos.filter((p) => p.tag === selectedTag);
+      ? photos
+      : photos.filter((p) => p.tag === selectedTag);
 
   const openLightboxAt = (index: number) => {
     setLightboxIndex(index);

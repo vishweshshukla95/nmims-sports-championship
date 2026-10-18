@@ -16,6 +16,8 @@ export type MatchStatus =
   | "Walkover";
 
 export type MatchRound =
+  | "Group A"
+  | "Group B"
   | "League"
   | "Group Stage"
   | "Quarter-Final"
@@ -39,6 +41,7 @@ export interface Team {
   sportId: SportType;
   category: CategoryGender;
   name: string;
+  squadSize?: number;
   players?: Player[];
 }
 
@@ -84,6 +87,8 @@ export interface MatchScoreDetails {
   teamAGames?: number;
   teamBGames?: number;
   rubberScores?: string[]; // e.g. ["11-8, 11-9, 11-7"]
+  toss?: string;
+  scorersText?: string;
 }
 
 export interface MatchPlayerStat {
@@ -91,7 +96,18 @@ export interface MatchPlayerStat {
   playerName: string;
   campusCode: string;
   statsText: string;
-  mvpPoints: number;
+  mvpPoints?: number;
+}
+
+export interface PlayerStatSummary {
+  playerId?: string;
+  playerName: string;
+  campusCode: string;
+  category?: string;
+  runs?: number;
+  wickets?: number;
+  goals?: number;
+  points?: number;
 }
 
 export interface Match {
@@ -113,17 +129,21 @@ export interface Match {
   venue: string; // e.g. "Main Cricket Ground", "Court 1", "Table 2"
   status: MatchStatus;
   winnerId?: string;
+  winnerName?: string;
   resultText?: string;
   scoreSummary?: string;
+  scoreText?: string;
   scoreDetails?: MatchScoreDetails;
   isWalkover?: boolean;
   notes?: string;
   motmPlayerId?: string;
   motmPlayerName?: string;
+  motmCampus?: string;
   motmCampusCode?: string;
   motmPhotoUrl?: string;
   motmNote?: string;
   playerStats?: MatchPlayerStat[];
+  groupId?: string;
   isDemo?: boolean;
 }
 
@@ -136,3 +156,90 @@ export interface LeaderboardEntry {
   motmAwards?: number;
   matchesPlayed?: number;
 }
+
+export interface Group {
+  id: string;
+  sportId: string;
+  categoryId?: string;
+  name: string;
+  sortOrder: number;
+  createdAt?: string;
+}
+
+export interface TeamGroup {
+  id: string;
+  teamId: string;
+  groupId: string;
+  groupName?: string;
+  sportId?: string;
+  categoryId?: string;
+}
+
+export interface CampusDepartmentPublic {
+  id?: string;
+  campusId: string;
+  shortCode: string;
+  name: string;
+  city: string;
+  state: string;
+  isHost?: boolean;
+  slug: string;
+  menCount: number;
+  womenCount: number;
+  totalCount: number;
+  staffMen: number;
+  staffWomen: number;
+  officerName?: string;
+  officerPhone?: string;
+  officerEmail?: string;
+  updatedAt?: string;
+}
+
+export type CampusDepartment = CampusDepartmentPublic;
+
+export interface CampusAccommodation {
+  campusId: string;
+  dayScholar: number;
+  hosteller: number;
+  updatedAt?: string;
+}
+
+export interface CampusDepartmentAdmin extends CampusDepartmentPublic {
+  dayScholar: number;
+  hosteller: number;
+}
+
+export interface PortalUser {
+  id: string;
+  email: string;
+  role: "admin" | "viewer";
+  createdAt: string;
+}
+
+export interface PointsTableRow {
+  pos: number;
+  teamId: string;
+  teamName: string;
+  shortCode: string;
+  played: number;
+  won: number;
+  lost: number;
+  drawn?: number;
+  noResult?: number;
+  points: number;
+  // Cricket
+  nrr?: number;
+  // Football
+  gf?: number;
+  ga?: number;
+  gd?: number;
+  // Basketball
+  pf?: number;
+  pa?: number;
+  diff?: number;
+  // Volleyball
+  setsWon?: number;
+  setsLost?: number;
+  qualified?: boolean;
+}
+

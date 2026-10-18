@@ -1,6 +1,6 @@
-# Production Deployment Guide: SVKM'S NMIMS Inter Campus Sports Championship 2026-27
+# Production Deployment Guide: SVKM's NMIMS Inter Campus Sports Championship 2026-27
 
-This guide covers deploying the official website to **Vercel** with a custom domain and setting up the **Supabase** backend.
+This guide covers deploying the official website to **Vercel** with a custom domain and configuring the **Supabase** backend for production.
 
 ---
 
@@ -8,18 +8,29 @@ This guide covers deploying the official website to **Vercel** with a custom dom
 
 1. Create a new project on [Supabase](https://supabase.com).
 2. Go to the **SQL Editor** in the Supabase Dashboard.
-3. Open `supabase/migrations/001_init.sql` from this codebase, copy its entire contents, paste it into the SQL editor, and click **Run**.
-4. Open `supabase/seed.sql`, paste its contents into the SQL editor, and click **Run**.
-   - This sets up all 6 sports, the 10 categories, the 7 campuses with cities, all 70 seeded teams, default MVP multipliers, and key contacts.
-5. In Supabase Dashboard, go to **Settings → API** and copy:
-   - Project URL (`NEXT_PUBLIC_SUPABASE_URL`)
-   - anon public key (`NEXT_PUBLIC_SUPABASE_ANON_KEY`)
-   - service_role secret key (`SUPABASE_SERVICE_ROLE_KEY`)
-6. Go to **Storage**, create a public bucket named `gallery`, and set the file upload limit to 10 MB with MIME types `image/webp, image/jpeg, image/png`.
+3. Execute the database migrations in order:
+   - `supabase/migrations/001_init.sql`
+   - `supabase/migrations/003_v5_updates.sql`
+   - `supabase/migrations/004_v6.sql`
+   - `supabase/migrations/005_groups_and_fixes.sql`
+   - `supabase/migrations/006_go_live.sql`
+4. In Supabase Dashboard, go to **Settings → API** and copy:
+   - **Project URL**: `NEXT_PUBLIC_SUPABASE_URL`
+   - **Project API Keys (anon public)**: `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - **Project API Keys (service_role secret)**: `SUPABASE_SERVICE_ROLE_KEY` (MUST NEVER be shared or prefixed with `NEXT_PUBLIC_`)
+5. **Supabase Auth URL Configuration**:
+   - Go to **Authentication → URL Configuration**.
+   - Set **Site URL**: `https://nmimssports.com` (or your chosen production domain).
+   - Under **Redirect URLs**, add:
+     - `https://nmimssports.com/**`
+     - `https://www.nmimssports.com/**`
+     - `http://localhost:3000/**` (for local development)
+6. **Storage Configuration**:
+   - Verify public bucket `gallery` exists with 5 MB file upload limit and allowed MIME types `image/jpeg, image/png, image/webp`.
 
 ---
 
-## 2. GitHub & Vercel Deployment
+## 2. Vercel Deployment
 
 1. Push this repository to GitHub:
    ```bash
@@ -29,27 +40,27 @@ This guide covers deploying the official website to **Vercel** with a custom dom
    ```
 2. Open [Vercel](https://vercel.com) and click **"Add New Project"** → **"Import Git Repository"**.
 3. Select your repository.
-4. Under **Environment Variables**, add:
-   - `NEXT_PUBLIC_SUPABASE_URL` = your Supabase URL
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = your Supabase anon key
-   - `SUPABASE_SERVICE_ROLE_KEY` = your Supabase service role key
-5. Under Build Command, ensure it is `next build --webpack` (default configured in `package.json`).
+4. Under **Environment Variables**, configure:
+   - `NEXT_PUBLIC_SUPABASE_URL` = `https://<your-project>.supabase.co`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = `<your-supabase-anon-key>`
+   - `SUPABASE_SERVICE_ROLE_KEY` = `<your-supabase-service-role-key>` (Server-only secret; never exposed to browser)
+   - `NEXT_PUBLIC_SITE_URL` = `https://nmimssports.com`
+5. Under Build Command, ensure it is `next build --webpack` (default in `package.json`).
 6. Click **Deploy**.
 
 ---
 
 ## 3. Custom Domain & DNS Configuration
 
-1. Purchase your domain (e.g., from Namecheap, GoDaddy, or Cloudflare).
-2. In your Vercel project dashboard:
+1. In your Vercel project dashboard:
    - Navigate to **Settings → Domains**.
-   - Add your apex domain (e.g., `nmimssports.com`) and `www.nmimssports.com`.
-3. Configure your domain registrar's DNS records:
+   - Add your apex domain: `nmimssports.com` (redirects `www.nmimssports.com` to `nmimssports.com` or vice-versa).
+2. Configure DNS records at your registrar (Cloudflare, Namecheap, GoDaddy):
    - **A Record**:
      - Host: `@`
      - Value: `76.76.21.21`
    - **CNAME Record**:
      - Host: `www`
      - Value: `cname.vercel-dns.com`
-4. Wait 5–15 minutes for DNS propagation. Vercel will automatically provision and issue an SSL/TLS HTTPS certificate.
-5. Verify SSL/TLS is active by opening `https://nmimssports.com`.
+3. Wait 5–15 minutes for DNS propagation. Vercel will automatically provision SSL/TLS certificates.
+4. Verify by navigating to `https://nmimssports.com/api/health`, which should return HTTP 200 with `status: "healthy"`.

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { X, Award, MapPin, Calendar, Clock, Trophy } from "lucide-react";
+import { X, Award, MapPin, Calendar } from "lucide-react";
 import { Match } from "@/types/tournament";
 import CampusBadge from "@/components/ui/CampusBadge";
 
@@ -124,8 +124,7 @@ export default function MatchDetailsModal({ match, isOpen, onClose }: MatchDetai
                     <tr>
                       <th className="p-3">Player</th>
                       <th className="p-3">Campus</th>
-                      <th className="p-3">Match Stats</th>
-                      <th className="p-3 text-right">MVP Pts</th>
+                      <th className="p-3 text-right">Match Stats</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[rgba(217,178,111,0.1)]">
@@ -133,10 +132,7 @@ export default function MatchDetailsModal({ match, isOpen, onClose }: MatchDetai
                       <tr key={i} className="hover:bg-[#20255A]/50 transition-colors">
                         <td className="p-3 font-semibold text-[#F4EFE3]">{stat.playerName}</td>
                         <td className="p-3 text-[#AEB3D6]">{stat.campusCode}</td>
-                        <td className="p-3 font-mono text-gold-light">{stat.statsText}</td>
-                        <td className="p-3 font-mono font-bold text-gold text-right">
-                          {stat.mvpPoints}
-                        </td>
+                        <td className="p-3 font-mono text-gold-light text-right">{stat.statsText}</td>
                       </tr>
                     ))}
                   </tbody>
