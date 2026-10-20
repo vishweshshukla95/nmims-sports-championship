@@ -1,6 +1,16 @@
 # SVKM's NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27
 
-Official website for the **SVKM's NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27**, organised by the Sports Department, SVKM's NMIMS, and hosted at **Mukesh Patel Technology Park (MPTP), Shirpur Campus** from **27th – 31st October 2026**.
+Official website for the **SVKM's NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27**, organised by the Sports Department, SVKM's NMIMS, and hosted at **Mukesh Patel Technology Park (MPTP), Shirpur Campus**.
+
+---
+
+## 📊 Repository Language Composition
+
+GitHub reports the repository language split as follows:
+
+- **TypeScript**: 91%
+- **PLpgSQL**: 7.4%
+- **Other**: 1.6%
 
 ---
 
