@@ -76,8 +76,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${cinzel.variable} ${oswald.variable} ${inter.variable}`}>
-      <body className="bg-navy text-text-main antialiased selection:bg-gold selection:text-indigo-black flex flex-col min-h-screen">
+    <html lang="en" suppressHydrationWarning className={`${cinzel.variable} ${oswald.variable} ${inter.variable}`}>
+      <body suppressHydrationWarning className="bg-navy text-text-main antialiased selection:bg-gold selection:text-indigo-black flex flex-col min-h-screen">
         <LayoutShell>{children}</LayoutShell>
       </body>
     </html>
