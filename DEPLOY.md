@@ -64,3 +64,21 @@ This guide covers deploying the official website to **Vercel** with a custom dom
      - Value: `cname.vercel-dns.com`
 3. Wait 5–15 minutes for DNS propagation. Vercel will automatically provision SSL/TLS certificates.
 4. Verify by navigating to `https://nmimssports.com/api/health`, which should return HTTP 200 with `status: "healthy"`.
+
+---
+
+## 4. Render Deployment (alternative to Vercel)
+
+Live at `https://nmims-sports-championship.onrender.com`.
+
+1. **Service type**: Web Service, Node runtime.
+   - Build Command: `npm ci && npm run build`
+   - Start Command: `npm start`
+2. **Environment** (Dashboard → your service → Environment). `.env.local` is gitignored, so Render never sees it — every variable must be added here:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `NEXT_PUBLIC_SITE_URL` = `https://nmims-sports-championship.onrender.com` (or the custom domain)
+3. **Rebuild after any env change.** `NEXT_PUBLIC_*` values are baked into the JavaScript at build time, so saving them is not enough: use **Manual Deploy → Clear build cache & deploy**. The build now fails with a `[CRITICAL] Missing build-time environment variables` error if the Supabase values are absent.
+4. **Supabase → Authentication → URL Configuration**: add `https://nmims-sports-championship.onrender.com/**` to Redirect URLs (needed for password-reset / magic-link emails).
+5. Verify: `/api/health` returns 200, and `/admin` redirects (307) to `/admin/login` rather than returning 500.

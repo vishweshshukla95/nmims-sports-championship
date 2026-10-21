@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Lock, Mail, ArrowRight, ShieldCheck, ArrowLeft, Loader2, AlertTriangle } from "lucide-react";
 import NavyPatchBackground from "@/components/ui/NavyPatchBackground";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import BrandLogos from "@/components/ui/BrandLogos";
 
 const MAX_FAILED_ATTEMPTS = 5;
@@ -40,6 +40,11 @@ export default function AdminLoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (cooldownRemaining > 0) return;
+
+    if (!isSupabaseConfigured) {
+      setError("Admin login is not configured on this server. Please contact the site administrator.");
+      return;
+    }
 
     setLoading(true);
     setError("");

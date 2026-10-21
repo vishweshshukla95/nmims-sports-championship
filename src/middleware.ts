@@ -17,6 +17,17 @@ export async function middleware(request: NextRequest) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
+    // Without Supabase config createServerClient throws and every admin route 500s.
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("[middleware] NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY missing from build.");
+      if (isAdminApi) {
+        return NextResponse.json({ error: "Service unavailable: authentication is not configured." }, { status: 503 });
+      }
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/admin/login";
+      return NextResponse.redirect(redirectUrl);
+    }
+
     const supabase = createServerClient(supabaseUrl, supabaseKey, {
       cookies: {
         getAll() {
