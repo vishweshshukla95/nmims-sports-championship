@@ -27,6 +27,7 @@ import {
 import { fetchTeamGroups } from "@/lib/groups-store";
 import { bulkImportMatchesAction } from "@/app/actions/tournament";
 import { getGroupsAction } from "@/app/actions/groups";
+import { IST_TIME_ZONE, toIstDateTimeParts } from "@/lib/calendar";
 import {
   Match,
   Team,
@@ -104,18 +105,32 @@ function MatchesAdminContent() {
     );
   }, [teams, formSport, formCategory]);
 
-  // Groups for current sport
+  // Groups for current sport & category. Men's and women's groups share names
+  // ("Group A"), so match on the category ids used by this category's team assignments.
   const categoryGroups = useMemo(() => {
-    return allGroupsList.filter((g) => g.sportId === formSport);
-  }, [allGroupsList, formSport]);
+    const teamIds = new Set(sportCategoryTeams.map((t) => t.id));
+    const categoryIds = new Set(
+      groups
+        .filter((tg) => teamIds.has(tg.teamId) && tg.categoryId)
+        .map((tg) => tg.categoryId as string)
+    );
+    return allGroupsList.filter(
+      (g) =>
+        g.sportId === formSport &&
+        (categoryIds.size === 0 || !g.categoryId || categoryIds.has(g.categoryId))
+    );
+  }, [allGroupsList, formSport, sportCategoryTeams, groups]);
+
+  // Ignore a selected group that belongs to another sport/category
+  const effectiveGroupId = categoryGroups.some((g) => g.id === formGroupId) ? formGroupId : "";
 
   // Teams filtered by group when round is Group Stage, Group A or Group B
   const eligibleTeams = useMemo(() => {
     if (formRound === "Group Stage") {
-      if (formGroupId) {
+      if (effectiveGroupId) {
         const assignedIds = new Set(
           groups
-            .filter((tg) => tg.groupId === formGroupId)
+            .filter((tg) => tg.groupId === effectiveGroupId)
             .map((tg) => tg.teamId)
         );
         const filtered = sportCategoryTeams.filter((t) => assignedIds.has(t.id));
@@ -140,7 +155,7 @@ function MatchesAdminContent() {
       return filtered.length > 0 ? filtered : sportCategoryTeams;
     }
     return sportCategoryTeams;
-  }, [sportCategoryTeams, formRound, formGroupId, groups, formSport]);
+  }, [sportCategoryTeams, formRound, effectiveGroupId, groups, formSport]);
 
   const effectiveTeamAId = useMemo(() => {
     if (formTeamAId && eligibleTeams.some((t) => t.id === formTeamAId)) {
@@ -186,9 +201,12 @@ function MatchesAdminContent() {
     setFormGroupId(m.groupId || "");
     setFormTeamAId(m.teamAId);
     setFormTeamBId(m.teamBId);
-    const [d, t] = m.scheduledAt ? m.scheduledAt.split("T") : ["2026-10-27", "09:30"];
+    // scheduledAt comes back from Supabase in UTC; the form edits IST (saved with +05:30)
+    const { date: d, time: t } = m.scheduledAt
+      ? toIstDateTimeParts(m.scheduledAt)
+      : { date: "2026-10-27", time: "09:30" };
     setFormDate(d);
-    setFormTime(t ? t.slice(0, 5) : "09:30");
+    setFormTime(t);
     setFormVenue(m.venue);
     setFormStatus(m.status);
     setFormNotes(m.notes || "");
@@ -204,6 +222,9 @@ function MatchesAdminContent() {
       matchNo: maxNo + 1,
       status: "Scheduled",
       scoreText: undefined,
+      resultText: undefined,
+      scoreSummary: undefined,
+      isWalkover: false,
       scoreDetails: undefined,
       winnerId: undefined,
       winnerName: undefined,
@@ -256,7 +277,7 @@ function MatchesAdminContent() {
       category: formCategory,
       matchNo: Number(formMatchNo),
       round: formRound,
-      groupId: formRound === "Group Stage" && formGroupId ? formGroupId : undefined,
+      groupId: formRound === "Group Stage" && effectiveGroupId ? effectiveGroupId : undefined,
       teamAId: actualTeamAId,
       teamBId: actualTeamBId,
       teamAName: teamA?.name || "Team A",
@@ -271,6 +292,7 @@ function MatchesAdminContent() {
       scoreDetails: editingMatch?.scoreDetails,
       winnerId: editingMatch?.winnerId,
       winnerName: editingMatch?.winnerName,
+      isWalkover: editingMatch?.isWalkover,
       motmPlayerId: editingMatch?.motmPlayerId,
       motmPlayerName: editingMatch?.motmPlayerName,
       motmCampus: editingMatch?.motmCampus,
@@ -376,9 +398,13 @@ function MatchesAdminContent() {
 
       if (matchesToImport.length > 0) {
         try {
-          await bulkImportMatchesAction(matchesToImport);
+          const res = await bulkImportMatchesAction(matchesToImport);
           const updated = await fetchMatches();
           setMatches(updated);
+          if (!res.success) {
+            showToast(res.error || "Failed to import fixtures", "error");
+            return;
+          }
           showToast(`Bulk imported ${matchesToImport.length} fixtures from CSV!`);
         } catch (err: unknown) {
           showToast(err instanceof Error ? err.message : "Failed to import fixtures", "error");
@@ -560,7 +586,8 @@ function MatchesAdminContent() {
                         {new Date(m.scheduledAt).toLocaleDateString("en-IN", {
                           day: "numeric",
                           month: "short",
-                        })} · {new Date(m.scheduledAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                          timeZone: IST_TIME_ZONE,
+                        })} · {new Date(m.scheduledAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", timeZone: IST_TIME_ZONE })}
                       </span>
                       <span className="text-[11px] truncate max-w-[140px] block text-gold/80">
                         {m.venue}
@@ -703,7 +730,7 @@ function MatchesAdminContent() {
                         Group / Pool
                       </label>
                       <select
-                        value={formGroupId}
+                        value={effectiveGroupId}
                         onChange={(e) => setFormGroupId(e.target.value)}
                         className="w-full p-2.5 rounded-xl bg-[#0F122E] border border-gold/30 text-xs text-gold font-semibold focus:outline-none"
                       >

@@ -104,7 +104,8 @@ const matchInputSchema = z.object({
   teamBId: z.string().min(1).max(100),
   scheduledAt: z.string().min(1),
   venue: z.string().min(1).max(100),
-  status: z.enum(["Scheduled", "Live", "Completed", "Abandoned", "Postponed"]),
+  // Must match the matches.status CHECK constraint and the MatchStatus type
+  status: z.enum(["Scheduled", "Postponed", "Completed", "Cancelled", "Walkover"]),
   winnerId: z.string().nullable().optional(),
   winnerName: z.string().max(100).optional(),
   resultText: z.string().max(255).optional(),

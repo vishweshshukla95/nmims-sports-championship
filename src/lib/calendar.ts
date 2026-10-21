@@ -1,3 +1,14 @@
+// All fixtures are played in Shirpur; always display and edit times in IST,
+// regardless of the server's or visitor's own time zone.
+export const IST_TIME_ZONE = "Asia/Kolkata";
+
+// Split an ISO timestamp (Supabase returns UTC, e.g. "...T04:00:00+00:00")
+// into IST "YYYY-MM-DD" and "HH:mm" parts.
+export function toIstDateTimeParts(iso: string): { date: string; time: string } {
+  const ist = new Date(new Date(iso).getTime() + 330 * 60 * 1000).toISOString();
+  return { date: ist.slice(0, 10), time: ist.slice(11, 16) };
+}
+
 export interface CalendarEvent {
   title: string;
   description: string;

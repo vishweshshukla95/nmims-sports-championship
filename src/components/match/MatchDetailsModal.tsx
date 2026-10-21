@@ -4,6 +4,7 @@ import React from "react";
 import { X, Award, MapPin, Calendar } from "lucide-react";
 import { Match } from "@/types/tournament";
 import CampusBadge from "@/components/ui/CampusBadge";
+import { IST_TIME_ZONE } from "@/lib/calendar";
 
 interface MatchDetailsModalProps {
   match: Match | null;
@@ -98,10 +99,10 @@ export default function MatchDetailsModal({ match, isOpen, onClose }: MatchDetai
                     {match.motmPlayerName}
                   </h4>
                   <p className="text-xs text-[#AEB3D6] mt-0.5">
-                    Campus: <strong>{match.motmCampusCode}</strong>
+                    Campus: <strong>{match.motmCampusCode || match.motmCampus}</strong>
                   </p>
                 </div>
-                <CampusBadge shortCode={match.motmCampusCode || "MUM"} size="md" />
+                <CampusBadge shortCode={match.motmCampusCode || match.motmCampus || "MUM"} size="md" />
               </div>
 
               {match.motmNote && (
@@ -156,6 +157,7 @@ export default function MatchDetailsModal({ match, isOpen, onClose }: MatchDetai
                 {new Date(match.scheduledAt).toLocaleString("en-IN", {
                   dateStyle: "medium",
                   timeStyle: "short",
+                  timeZone: IST_TIME_ZONE,
                 })}
               </span>
             </div>

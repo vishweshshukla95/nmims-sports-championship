@@ -15,6 +15,7 @@ import {
   SPORTS_CONFIG,
 } from "@/config/tournament";
 import { fetchTeams, getSeededTeams } from "@/lib/tournament-store";
+import { getPlayersAction } from "@/app/actions/tournament";
 import { Team } from "@/types/tournament";
 
 function TeamsContent() {
@@ -32,11 +33,15 @@ function TeamsContent() {
   const [allTeams, setAllTeams] = useState<Team[]>(getSeededTeams());
 
   useEffect(() => {
-    fetchTeams()
-      .then((data) => {
-        if (data && data.length > 0) {
-          setAllTeams(data);
-        }
+    Promise.all([fetchTeams(), getPlayersAction()])
+      .then(([data, players]) => {
+        // Attach registered players so the expanded card shows the squad
+        const withPlayers = (list: Team[]) =>
+          list.map((team) => ({
+            ...team,
+            players: players.filter((p) => p.teamId === team.id),
+          }));
+        setAllTeams(withPlayers(data && data.length > 0 ? data : getSeededTeams()));
       })
       .catch((err) => console.error("fetchTeams error:", err));
   }, []);

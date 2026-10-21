@@ -181,7 +181,13 @@ function MatchResultEditor({ match, onSave, showToast }: MatchResultEditorProps)
   );
 
   // Result Override & MOTM
-  const [winnerOverride, setWinnerOverride] = useState<string>(match.winnerId || "auto");
+  // Map the stored winner back onto the dropdown's option values
+  const [winnerOverride, setWinnerOverride] = useState<string>(() => {
+    if (match.winnerId === match.teamAId) return match.isWalkover ? "walkoverA" : "teamA";
+    if (match.winnerId === match.teamBId) return match.isWalkover ? "walkoverB" : "teamB";
+    if (match.status === "Completed" && match.scoreText === "Match Abandoned / No Result") return "noResult";
+    return "auto";
+  });
   const [motmPlayerName, setMotmPlayerName] = useState<string>(match.motmPlayerName || "");
   const [motmCampus, setMotmCampus] = useState<string>(match.motmCampus || match.teamAShortCode);
   const [motmNote, setMotmNote] = useState<string>(match.motmNote || "");
@@ -190,7 +196,7 @@ function MatchResultEditor({ match, onSave, showToast }: MatchResultEditorProps)
   const [playerStats, setPlayerStats] = useState<MatchPlayerStat[]>(match.playerStats || []);
   const [newStatPlayer, setNewStatPlayer] = useState({
     name: "",
-    campus: "MUM",
+    campus: match.teamAShortCode,
     statType: "runs",
     val: 0,
   });
@@ -310,9 +316,11 @@ function MatchResultEditor({ match, onSave, showToast }: MatchResultEditorProps)
     if (winnerOverride === "teamA") {
       finalWinnerId = match.teamAId;
       finalWinnerName = match.teamAName;
+      if (autoWinnerId !== finalWinnerId) finalResultText = `${match.teamAName} won`;
     } else if (winnerOverride === "teamB") {
       finalWinnerId = match.teamBId;
       finalWinnerName = match.teamBName;
+      if (autoWinnerId !== finalWinnerId) finalResultText = `${match.teamBName} won`;
     } else if (winnerOverride === "walkoverA") {
       finalWinnerId = match.teamAId;
       finalWinnerName = match.teamAName;
@@ -336,8 +344,12 @@ function MatchResultEditor({ match, onSave, showToast }: MatchResultEditorProps)
       ...match,
       status: "Completed",
       scoreText: finalResultText,
+      // Overwrite values carried over from an earlier declaration; the server prefers these over scoreText
+      resultText: finalResultText,
+      scoreSummary: finalResultText,
       winnerId: finalWinnerId,
       winnerName: finalWinnerName,
+      isWalkover: winnerOverride === "walkoverA" || winnerOverride === "walkoverB",
       motmPlayerName: motmPlayerName.trim() || undefined,
       motmCampus: motmCampus.trim() || undefined,
       motmNote: motmNote.trim() || undefined,

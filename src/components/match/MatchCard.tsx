@@ -4,7 +4,7 @@ import React from "react";
 import { MapPin, Award, CalendarPlus } from "lucide-react";
 import CampusBadge from "@/components/ui/CampusBadge";
 import { Match } from "@/types/tournament";
-import { downloadIcsFile } from "@/lib/calendar";
+import { downloadIcsFile, IST_TIME_ZONE } from "@/lib/calendar";
 
 export interface MatchCardProps {
   match: Match;
@@ -31,11 +31,13 @@ export default function MatchCard({ match, onSelect, onOpenDetails, type = "sche
   const formattedDate = new Date(match.scheduledAt).toLocaleDateString("en-IN", {
     day: "numeric",
     month: "short",
+    timeZone: IST_TIME_ZONE,
   });
 
   const formattedTime = new Date(match.scheduledAt).toLocaleTimeString("en-IN", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: IST_TIME_ZONE,
   });
 
   return (
@@ -155,7 +157,7 @@ export default function MatchCard({ match, onSelect, onOpenDetails, type = "sche
             <div className="mt-1.5 text-xs text-gold flex items-center justify-center gap-1.5 font-medium">
               <Award className="w-3.5 h-3.5 text-gold-light" />
               <span>
-                🏅 Man of the Match: <strong>{match.motmPlayerName}</strong> ({match.motmCampusCode})
+                🏅 Man of the Match: <strong>{match.motmPlayerName}</strong> ({match.motmCampusCode || match.motmCampus})
               </span>
             </div>
           )}

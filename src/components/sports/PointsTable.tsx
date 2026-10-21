@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import CampusBadge from "@/components/ui/CampusBadge";
 import { Trophy } from "lucide-react";
 import {
@@ -12,7 +12,8 @@ import {
   Match,
   PointsTableRow,
 } from "@/types/tournament";
-import { computePointsTable } from "@/lib/points-calculator";
+import { computePointsTable, PointAdjustment, PointsRules } from "@/lib/points-calculator";
+import { fetchPointsAdjustments, fetchSportPointsRules } from "@/lib/adjustments-store";
 
 interface PointsTableProps {
   sportId: SportType;
@@ -31,6 +32,23 @@ export default function PointsTable({
   teamGroups,
   matches,
 }: PointsTableProps) {
+  // Scoring rules and manual adjustments configured on the admin Points page
+  const [rules, setRules] = useState<Partial<Record<SportType, PointsRules>>>();
+  const [adjustments, setAdjustments] = useState<PointAdjustment[]>([]);
+
+  useEffect(() => {
+    let ignore = false;
+    Promise.all([fetchSportPointsRules(), fetchPointsAdjustments()]).then(([r, a]) => {
+      if (!ignore) {
+        setRules(r);
+        setAdjustments(a);
+      }
+    });
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
   // Filter groups for current sport
   const relevantGroups = useMemo(() => {
     return [...groups]
@@ -46,7 +64,9 @@ export default function PointsTable({
       category,
       teams,
       teamGroups,
-      matches
+      matches,
+      rules,
+      adjustments
     );
 
     return (

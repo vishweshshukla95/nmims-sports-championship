@@ -81,6 +81,10 @@ export default function ImageLightbox({
     const a = document.createElement("a");
     a.href = currentImage.src;
     a.download = currentImage.src.split("/").pop() || "championship-photo.webp";
+    // Browsers ignore `download` for other origins (Supabase Storage); open those in a new tab
+    // instead of navigating away from the gallery.
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

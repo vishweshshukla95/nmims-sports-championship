@@ -25,6 +25,8 @@ import {
 } from "@/config/tournament";
 import { getMatches, fetchMatches, getTeams, fetchTeams } from "@/lib/tournament-store";
 import { getTeamGroups, fetchTeamGroups, fetchGroups } from "@/lib/groups-store";
+import { buildStatLeaderboard } from "@/lib/points-calculator";
+import { toIstDateTimeParts } from "@/lib/calendar";
 import { Match, CategoryGender, SportType, Team, TeamGroup, Group } from "@/types/tournament";
 
 export const dynamic = "force-dynamic";
@@ -96,7 +98,8 @@ function SportDashboardContent() {
     if (selectedDay !== "all") {
       const dayConfig = TOURNAMENT_DAYS.find((d) => d.dayNumber === selectedDay);
       if (dayConfig) {
-        list = list.filter((m) => m.scheduledAt.startsWith(dayConfig.date));
+        // scheduledAt is UTC from Supabase; compare against the IST calendar day
+        list = list.filter((m) => toIstDateTimeParts(m.scheduledAt).date === dayConfig.date);
       }
     }
 
@@ -132,10 +135,10 @@ function SportDashboardContent() {
         category: selectedCategory,
         board1Title: "🏏 Highest Runs",
         board1Unit: "Runs",
-        board1Data: [],
+        board1Data: buildStatLeaderboard(allMatches, "cricket", selectedCategory, "Runs"),
         board2Title: "🎯 Most Wickets",
         board2Unit: "Wickets",
-        board2Data: [],
+        board2Data: buildStatLeaderboard(allMatches, "cricket", selectedCategory, "Wickets"),
       };
     }
     if (sportSlug === "football") {
@@ -144,7 +147,7 @@ function SportDashboardContent() {
         category: selectedCategory,
         board1Title: "⚽ Most Goals",
         board1Unit: "Goals",
-        board1Data: [],
+        board1Data: buildStatLeaderboard(allMatches, "football", selectedCategory, "Goals"),
       };
     }
     if (sportSlug === "basketball") {
@@ -153,7 +156,7 @@ function SportDashboardContent() {
         category: selectedCategory,
         board1Title: "🏀 Most Points Scored",
         board1Unit: "Points",
-        board1Data: [],
+        board1Data: buildStatLeaderboard(allMatches, "basketball", selectedCategory, "Points"),
       };
     }
     if (sportSlug === "volleyball") {
@@ -162,11 +165,11 @@ function SportDashboardContent() {
         category: selectedCategory,
         board1Title: "🏐 Most Points Scored",
         board1Unit: "Points",
-        board1Data: [],
+        board1Data: buildStatLeaderboard(allMatches, "volleyball", selectedCategory, "Points"),
       };
     }
     return null;
-  }, [sportSlug, selectedCategory]);
+  }, [sportSlug, selectedCategory, allMatches]);
 
   if (!currentSport) {
     return (

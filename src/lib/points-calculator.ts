@@ -5,6 +5,7 @@ import {
   SportType,
   CategoryGender,
   PointsTableRow,
+  LeaderboardEntry,
 } from "@/types/tournament";
 
 export interface PointsRules {
@@ -75,8 +76,9 @@ export function computePointsTable(
     return [];
   }
 
-  // Filter completed matches for this group
-  const targetRound = `Group ${groupName}`;
+  // Filter completed matches for this group. Groups are named either "A" or "Group A",
+  // while the round is stored as "Group A", so accept both forms.
+  const targetRounds = [groupName, `Group ${groupName}`];
   const groupMatches = matches.filter(
     (m) =>
       m.sportId === sportId &&
@@ -85,7 +87,7 @@ export function computePointsTable(
       (
         (m.groupId && m.groupId === groupId) ||
         (!m.groupId && (
-          m.round === targetRound ||
+          targetRounds.includes(m.round) ||
           (m.round === "Group Stage" && assignedTeamIds.has(m.teamAId) && assignedTeamIds.has(m.teamBId))
         ))
       )
@@ -245,6 +247,54 @@ export function computePointsTable(
   return rows.map((row, idx) => ({
     ...row,
     pos: idx + 1,
-    qualified: idx < 2 && rows.length >= 2,
+    // Only mark qualification once the team has actually played
+    qualified: idx < 2 && rows.length >= 2 && row.played > 0,
   }));
+}
+
+// Labels written into MatchPlayerStat.statsText by the results admin ("45 Runs", "3 Wkts", "2 Goals", "12 Pts")
+const STAT_LABELS: Record<string, string[]> = {
+  Runs: ["run", "runs"],
+  Wickets: ["wkt", "wkts", "wicket", "wickets"],
+  Goals: ["goal", "goals"],
+  Points: ["pt", "pts", "point", "points"],
+};
+
+export function buildStatLeaderboard(
+  matches: Match[],
+  sportId: SportType,
+  category: CategoryGender,
+  unit: string
+): LeaderboardEntry[] {
+  const labels = STAT_LABELS[unit] || [unit.toLowerCase()];
+  const totals = new Map<string, { name: string; campusCode: string; value: number; matchesPlayed: number }>();
+
+  matches
+    .filter((m) => m.sportId === sportId && m.category === category && m.status === "Completed")
+    .forEach((m) => {
+      (m.playerStats || []).forEach((stat) => {
+        // Skip malformed entries (e.g. edited directly in the database) instead of crashing the page
+        if (!stat?.playerName || !stat.statsText) return;
+        let value = 0;
+        for (const [, num, label] of stat.statsText.matchAll(/(\d+)\s*([a-z]+)/gi)) {
+          if (labels.includes(label.toLowerCase())) value += Number(num);
+        }
+        if (value <= 0) return;
+
+        const key = `${stat.playerName.trim().toLowerCase()}|${stat.campusCode}`;
+        const entry = totals.get(key) || {
+          name: stat.playerName.trim(),
+          campusCode: stat.campusCode,
+          value: 0,
+          matchesPlayed: 0,
+        };
+        entry.value += value;
+        entry.matchesPlayed += 1;
+        totals.set(key, entry);
+      });
+    });
+
+  return [...totals.values()]
+    .sort((a, b) => b.value - a.value)
+    .map((e, idx) => ({ rank: idx + 1, ...e }));
 }
