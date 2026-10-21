@@ -3,7 +3,7 @@ import { z } from "zod";
 const clientEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url("NEXT_PUBLIC_SUPABASE_URL must be a valid URL"),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(10, "NEXT_PUBLIC_SUPABASE_ANON_KEY is required and must be valid"),
-  NEXT_PUBLIC_SITE_URL: z.string().url().optional().default("https://nmimssports.com"),
+  NEXT_PUBLIC_SITE_URL: z.string().url().optional().default("https://nmimsintercampus.online"),
 });
 
 const serverEnvSchema = clientEnvSchema.extend({

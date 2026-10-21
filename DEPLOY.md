@@ -82,3 +82,8 @@ Live at `https://nmims-sports-championship.onrender.com`.
 3. **Rebuild after any env change.** `NEXT_PUBLIC_*` values are baked into the JavaScript at build time, so saving them is not enough: use **Manual Deploy → Clear build cache & deploy**. The build now fails with a `[CRITICAL] Missing build-time environment variables` error if the Supabase values are absent.
 4. **Supabase → Authentication → URL Configuration**: add `https://nmims-sports-championship.onrender.com/**` to Redirect URLs (needed for password-reset / magic-link emails).
 5. Verify: `/api/health` returns 200, and `/admin` redirects (307) to `/admin/login` rather than returning 500.
+6. **Custom domain** (`nmimsintercampus.online`): Settings → Custom Domains → add `nmimsintercampus.online`, then at the DNS provider add
+   - `CNAME` · Hostname `www` · Target `nmims-sports-championship.onrender.com`
+   - `A` · Hostname `@` · Target `216.24.57.1`
+
+   After Render verifies both, set `NEXT_PUBLIC_SITE_URL=https://nmimsintercampus.online`, clear build cache & deploy, and add the new domain to Supabase Auth URL Configuration.

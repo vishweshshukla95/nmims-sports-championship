@@ -20,8 +20,8 @@ function assertBuildEnv() {
 // Render sets RENDER_EXTERNAL_HOSTNAME automatically; NEXT_PUBLIC_SITE_URL covers custom domains.
 function serverActionOrigins(): string[] {
   const origins = [
-    "nmimssports.com",
-    "www.nmimssports.com",
+    "nmimsintercampus.online",
+    "www.nmimsintercampus.online",
     "nmims-sports-championship.onrender.com",
     "localhost:3000",
   ];

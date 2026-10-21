@@ -2,7 +2,7 @@ import { MetadataRoute } from "next";
 import { SPORTS_CONFIG } from "@/config/tournament";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://nmimssports.com";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://nmimsintercampus.online";
 
   const staticRoutes = [
     "",

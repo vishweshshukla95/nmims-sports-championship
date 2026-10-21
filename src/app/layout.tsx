@@ -24,8 +24,10 @@ const inter = Inter({
   weight: ["300", "400", "500", "600", "700"],
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://nmimsintercampus.online";
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://nmimssports.com"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: `${TOURNAMENT_CONFIG.fullName}`,
     template: `%s | ${TOURNAMENT_CONFIG.fullName}`,
@@ -41,7 +43,7 @@ export const metadata: Metadata = {
     title: TOURNAMENT_CONFIG.fullName,
     description:
       "Official website of SVKM's NMIMS INTER CAMPUS SPORTS CHAMPIONSHIP 2026-27 at MPTP Shirpur.",
-    url: "https://nmimssports.com",
+    url: SITE_URL,
     siteName: TOURNAMENT_CONFIG.fullName,
     images: [
       {
